@@ -14,7 +14,7 @@
         <description lang="en_GB">Viewing videos from BitChute.com</description>
         <language>English</language>
         <platform>all</platform>
-        <license>GPL-3.0</license>
+        <license>GPL-2.0</license>
         <forum>https://github.com/winsomehax/plugin.video.bitchute</forum>
         <website>https://github.com/winsomehax/plugin.video.bitchute</website>
         <email>winsomehax@gmail.com</email>

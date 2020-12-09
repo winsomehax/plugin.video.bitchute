@@ -76,16 +76,12 @@ def build_main_menu():
     global store
     store.menu.start_folder()
 
-    store.menu.new_folder_item(item_name="Your Bitchute user is: " +
-                         store.bitchute.username, item_val=None, func=open_settings)
+    store.menu.new_folder_item(item_name="Set your Bitchute user", item_val=None, func=open_settings)
     store.menu.new_folder_item(
         item_name="Subscriptions", item_val=None, func=subscriptions)
     store.menu.new_folder_item(
         item_name="Notifications", item_val=None, func=notifications)
-    # menu.new_folder_item(
-    #     item_name="View all currently live streams", item_val=None, func=livestreams_all)
-    # menu.new_folder_item(item_name="Search currently live streams",
-    #                      item_val=None, func=livestreams_search)
+
     store.menu.end_folder()
 
 
@@ -151,7 +147,7 @@ def build_open_settings():
 
     store.bitchute = bitchute_query.BitChute(user,password)
 
-    
+
 if store.bitchute is None:
     user=xbmcaddon.Addon().getSetting("user")
     password=xbmcaddon.Addon().getSetting("password")

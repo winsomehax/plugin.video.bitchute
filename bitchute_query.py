@@ -2,15 +2,6 @@ from bs4 import BeautifulSoup
 import requests
 
 
-"""
-
-https://www.bitchute.com/video/QsfCiHWCbhm5/
-
-<source src="https://zb10-7gsop1v78.bitchute.com/yqVw2kOQK4Jl/QsfCiHWCbhm5.mp4" type="video/mp4">
-
-"""
-
-
 class Video():
 
     def __init__(self, videoURL, poster, title, description):
@@ -178,30 +169,3 @@ class BitChute():
         video = Video(videoURL=videoURL, poster=poster, title=title, description="")
 
         return (video)
-
-
-#x = BitChute()
-
-#vids=x.get_channel("OIT8s8UYetvu")
-
-#for v in vids:
-#    print (v.title) 
-# print(x.get_video("QsfCiHWCbhm5"))
-
-# print("SUBS")
-# for s in x.subscriptions():
-#         print("****** ", s.name, s.channel, s.last_video,
-#                 s.description_text, s.channel_image)
-""" 
-
-print("NOTIF")
-
-for n in x.notifications():
-    print("****** ", n.videoURL, n.notification_detail)
-
-exit(0) """
-
-x=1
-
-if "x" in globals():
-    print ("Found it")
