@@ -1,4 +1,4 @@
-# plugin.video.bitchut
+# plugin.video.bitchute
 
 Welcome to my Bitchute addon for KODI
 
