@@ -13,9 +13,9 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgctxt "#32002"
-msgid "BitChute user name"
+msgid "Bitchute user name"
 msgstr ""
 
 msgctxt "#32003"
-msgid "BitChute password"
+msgid "Bitchute password"
 msgstr ""

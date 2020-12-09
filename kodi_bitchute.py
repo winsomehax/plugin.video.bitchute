@@ -146,9 +146,12 @@ def build_and_play(item_val):
 
 def build_open_settings():
     xbmcaddon.Addon().openSettings()
+    user=xbmcaddon.Addon().getSetting("user")
+    password=xbmcaddon.Addon().getSetting("password")
 
+    store.bitchute = bitchute_query.BitChute(user,password)
 
-
+    
 if store.bitchute is None:
     user=xbmcaddon.Addon().getSetting("user")
     password=xbmcaddon.Addon().getSetting("password")
