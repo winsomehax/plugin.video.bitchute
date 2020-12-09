@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.video.bitchute" name="bitchute" version="1.0.0" provider-name="winsomehax">
+    <requires>
+        <import addon="xbmc.python" version="2.26.0"/>
+        <import addon="script.module.routing" version="0.2.0"/>
+        <import addon="script.module.requests" version="2.9.1"/>
+        <import addon="script.module.beautifulsoup4" />
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="main.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en_GB">Viewing videos from BitChute.com</summary>
+        <description lang="en_GB">Viewing videos from BitChute.com</description>
+        <language>English</language>
+        <platform>all</platform>
+        <license>GPL-3.0</license>
+        <forum>https://github.com/winsomehax/plugin.video.bitchute</forum>
+        <website>https://github.com/winsomehax/plugin.video.bitchute</website>
+        <email>winsomehax@gmail.com</email>
+        <source>https://github.com/winsomehax/plugin.video.bitchute</source>
+        <news>https://github.com/winsomehax/plugin.video.bitchute</news>
+        <disclaimer lang="en">It's yours. If you break it, you can keep the pieces!</disclaimer>
+        <assets>
+            <icon>resources/icon.png</icon>
+            <fanart>resources/fanart.jpg</fanart>
+        </assets>
+    </extension>
+</addon>

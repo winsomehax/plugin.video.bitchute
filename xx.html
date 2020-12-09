@@ -1,0 +1,30 @@
+https://www.bitchute.com/accounts/login/
+
+
+<div id="page-detail" class="row">
+<div class="col-xs-12 section">
+<h3 class="section-heading">Enter Account Details</h3>
+<form method="post" id="login_form">
+<input type="hidden" name="csrfmiddlewaretoken" value="yLYcMHjremRiiOd7US75FLNreJb5akAW1VU9O5Xx1dHyM1MjuvAGNxfHvQfaEbbZ">
+<div class="alert alert-danger hidden" id="login_error"></div>
+<div class="form-group">
+<label>Username or Email Address</label>
+<div class="alert alert-danger hidden" id="login_error_username"></div>
+<input type="text" name="username" class="form-control" autocomplete="username" maxlength="150" required="" id="id_username">
+</div>
+<div class="form-group">
+<label>Password</label>
+<div class="alert alert-danger hidden" id="login_error_password"></div>
+<input type="password" name="password" class="form-control" autocomplete="off" maxlength="50" required="" id="id_password">
+</div>
+<div class="form-group hidden" id="login_one_time_code">
+<label>One Time Code</label>
+<div class="alert alert-danger hidden" id="login_error_one_time_code"></div>
+<input type="Search" name="one_time_code" class="form-control" autocomplete="one-time-code" maxlength="6" id="id_one_time_code">
+<p class="help">To complete the login process, please enter the one time code that was sent to your email address.</p>
+</div>
+</form>
+<div class="pt5 pb15"><button type="button" class="btn btn-danger" id="submit"><svg class="svg-inline--fa fa-check fa-w-16 fa-fw" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="check" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg=""><path fill="currentColor" d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"></path></svg><!-- <i class="fas fa-check fa-fw"></i> --> Submit</button></div>
+<p>Forgotten your password? Click <a href="/accounts/reset/">here</a> to reset it.</p>
+</div>
+</div>

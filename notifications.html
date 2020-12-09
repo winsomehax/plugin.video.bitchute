@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Notifications - BitChute</title>
+    <meta content="initial-scale=1.0, width=device-width" name="viewport">
+    <link href="https://www.bitchute.com/notifications/" id="canonical" rel="canonical" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.2.0/js.cookie.min.js"
+        type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/css-element-queries/1.2.3/ResizeSensor.min.js"
+        type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/css-element-queries/1.2.3/ElementQueries.min.js"
+        type="text/javascript"></script>
+    <script src="/static/v128/js/theme.js" type="text/javascript"></script>
+    <script crossorigin="anonymous"
+        integrity="sha512-rmZcZsyhe0/MAjquhTgiUcb4d9knaFc7b5xAfju483gbEXTkeJRUMIPk6s3ySZMYUHEcjKbjLjyddGWMrNEvZg=="
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js" type="text/javascript"></script>
+    <script src="https://commentfreely.bitchute.com/static/comments/js/comments2.js" type="text/javascript"></script>
+    <script src="https://commentfreely.bitchute.com/static/comments/js/commentactions2.js"
+        type="text/javascript"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"
+        type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.0.0/css/bootstrap-slider.css"
+        rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css" rel="stylesheet"
+        type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.3/toastr.min.css" rel="stylesheet"
+        type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/plyr/3.5.6/plyr.css" rel="stylesheet" type="text/css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.6.3/rickshaw.min.css" rel="stylesheet"
+        type="text/css" />
+    <link href="https://commentfreely.bitchute.com/static/comments/css/comments1.css" rel="stylesheet" type="text/css">
+    <link href="/static/v128/css/awards.css" rel="stylesheet" type="text/css">
+    <link href="/static/v128/css/common.css" rel="stylesheet" type="text/css" />
+    <link href="/static/v128/css/help-us-grow.css" rel="stylesheet" type="text/css" />
+    <link href="/static/v128/css/membership.css" rel="stylesheet" type="text/css" />
+    <link href="/static/v128/css/monetization.css" rel="stylesheet" type="text/css" />
+    <link href="/static/v128/css/notification.css" rel="stylesheet" type="text/css" />
+    <link href="/static/v128/css/playlist.css" rel="stylesheet" type="text/css" />
+    <link href="/static/v128/css/search.css" rel="stylesheet" type="text/css" />
+    <link href="/static/v128/css/video.css" rel="stylesheet" type="text/css" />
+    <link href="/static/v128/css/theme-default-day.css" id="css-theme" rel="stylesheet" type="text/css">
+    <script type="text/javascript">
+        themeInit('/static/v128/', 'default');
+        if (Cookies.getJSON('preferences') && Cookies.getJSON('preferences').theme == 'night') {
+            $('#css-theme').attr('href', '/static/v128/css/theme-default-night.css');
+        } else {
+            $('#css-theme').attr('href', '/static/v128/css/theme-default-day.css');
+        }
+    </script>
+    <link href="/static/v128/images/apple-icon-57x57.png" rel="apple-touch-icon" sizes="57x57" />
+    <link href="/static/v128/images/apple-icon-60x60.png" rel="apple-touch-icon" sizes="60x60" />
+    <link href="/static/v128/images/apple-icon-72x72.png" rel="apple-touch-icon" sizes="72x72" />
+    <link href="/static/v128/images/apple-icon-76x76.png" rel="apple-touch-icon" sizes="76x76" />
+    <link href="/static/v128/images/apple-icon-114x114.png" rel="apple-touch-icon" sizes="114x114" />
+    <link href="/static/v128/images/apple-icon-120x120.png" rel="apple-touch-icon" sizes="120x120" />
+    <link href="/static/v128/images/apple-icon-144x144.png" rel="apple-touch-icon" sizes="144x144" />
+    <link href="/static/v128/images/apple-icon-152x152.png" rel="apple-touch-icon" sizes="152x152" />
+    <link href="/static/v128/images/apple-icon-180x180.png" rel="apple-touch-icon" sizes="180x180" />
+    <link href="/static/v128/images/android-icon-192x192.png" rel="icon" sizes="192x192" type="image/png" />
+    <link href="/static/v128/images/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png" />
+    <link href="/static/v128/images/favicon-96x96.png" rel="icon" sizes="96x96" type="image/png" />
+    <link href="/static/v128/images/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png" />
+    <link href="/static/v128/manifest.json" rel="manifest" />
+    <meta content="#ffffff" name="msapplication-TileColor" />
+    <meta content="/static/v128/images/ms-icon-144x144.png" name="msapplication-TileImage" />
+    <meta content="#ffffff" name="theme-color" />
+    <meta
+        content="BitChute aims to put creators first and provide them with a service that they can use to flourish and express their ideas freely."
+        name="description">
+    <meta content="summary_large_image" name="twitter:card" />
+    <meta content="https://rest.s3for.me/bcimg/site/bitchutecheesy.jpg" name="twitter:url" />
+    <meta content="BitChute is a peer-to-peer social video platform." name="twitter:title" />
+    <meta
+        content="BitChute aims to put creators first and provide them with a service that they can use to flourish and express their ideas freely."
+        name="twitter:description" />
+    <meta content="@bitchute" name="twitter:site" />
+    <meta content="bitchute.com" name="twitter:domain" />
+    <meta content="https://rest.s3for.me/bcimg/site/bitchutecheesy.jpg" name="twitter:image:src" />
+    <meta content="720" name="twitter:image:width" />
+    <meta content="380" name="twitter:image:height" />
+    <meta content="@bitchute" name="twitter:creator" />
+    <meta content="BitChute" property="og:site_name">
+    <meta content="https://www.bitchute.com/" property="og:url">
+    <meta content="BitChute is a peer-to-peer social video platform." property="og:title">
+    <meta
+        content="BitChute aims to put creators first and provide them with a service that they can use to flourish and express their ideas freely."
+        property="og:description">
+    <meta content="https://rest.s3for.me/bcimg/site/bitchutecheesy.jpg" property="og:image">
+    <meta content="https://rest.s3for.me/bcimg/site/bitchutecheesy.jpg" property="og:image:secure_url">
+    <meta content="image/jpeg" property="og:image:type">
+    <meta content="720" property="og:image:width">
+    <meta content="380" property="og:image:height">
+    <meta content="article" property="og:type">
+    <link href="" id="oembed" rel="alternate" type="application/json+oembed" />
+    <!--[if lt IE 9]>
+<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+<![endif]-->
+    </meta>
+    </meta>
+    </meta>
+    </meta>
+    </meta>
+    </meta>
+    </meta>
+    </meta>
+    </meta>
+    </meta>
+    </meta>
+    </link>
+    </link>
+    </link>
+    </meta>
+</head>
+
+<body>
+    <div class="modal fade" id="auth_modal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button aria-hidden="true" class="close" data-dismiss="modal" type="button"><i
+                            class="fas fa-times fa-fw"></i></button>
+                    <a href="/"><img alt="BitChute" class="modal-logo logo-full"
+                            src="/static/v128/images/logo-full-day.png" /></a>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs">
+                        <li class="active" id="auth_login_tab">
+                            <a data-toggle="tab" href="#auth_login">Login</a>
+                        </li>
+                        <li id="auth_reset_tab">
+                            <a data-toggle="tab" href="#auth_reset">Password Reset</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane active" data-target="/accounts/login/" id="auth_login">
+                            <form id="auth_login_form" method="post">
+                                <input name="csrfmiddlewaretoken" type="hidden"
+                                    value="nxQBNoAb3wkKYjxWRIK0BUigXxRub5St5ry3cL8qjfmDv9bDO3cp7VIdxWIi1pi6" />
+                                <div class="alert alert-danger hidden" id="auth_login_error"></div>
+                                <div class="form-group">
+                                    <label>Username or Email Address</label>
+                                    <div class="alert alert-danger hidden" id="auth_login_error_username"></div>
+                                    <input autocomplete="username" class="form-control" id="id_username" maxlength="150"
+                                        name="username" required="" type="text" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Password</label>
+                                    <div class="alert alert-danger hidden" id="auth_login_error_password"></div>
+                                    <input autocomplete="off" class="form-control" id="id_password" maxlength="50"
+                                        name="password" required="" type="password" />
+                                </div>
+                                <div class="form-group hidden" id="auth_login_one_time_code">
+                                    <label>One Time Code</label>
+                                    <div class="alert alert-danger hidden" id="auth_login_error_one_time_code"></div>
+                                    <input autocomplete="one-time-code" class="form-control" id="id_one_time_code"
+                                        maxlength="6" name="one_time_code" type="Search" />
+                                    <p class="help">To complete the login process, please enter the one time code that
+                                        was sent to your email address.</p>
+                                </div>
+                            </form>
+                            <p>Don't have an account? Create one <a href="/accounts/register/">here</a>.</p>
+                        </div>
+                        <div class="tab-pane" data-target="/accounts/reset/" id="auth_reset">
+                            <form id="auth_reset_form" method="post">
+                                <input name="csrfmiddlewaretoken" type="hidden"
+                                    value="nxQBNoAb3wkKYjxWRIK0BUigXxRub5St5ry3cL8qjfmDv9bDO3cp7VIdxWIi1pi6" />
+                                <div class="alert alert-danger hidden" id="auth_reset_error"></div>
+                                <label>Email Address</label>
+                                <div class="alert alert-danger hidden" id="auth_reset_error_email"></div>
+                                <input autocomplete="email" class="form-control" id="id_email" maxlength="254"
+                                    name="email" placeholder="email@example.com" required="" type="email" />
+                                <p class="help">Please provide the email address associated with your account to receive
+                                    the password reset instructions.</p>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger" id="auth_submit" type="button"><i class="fas fa-check fa-fw"></i>
+                        Submit</button>
+                    <button class="btn btn-default" data-dismiss="modal" type="button"><i
+                            class="fas fa-times fa-fw"></i> Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="error_modal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button aria-hidden="true" class="close" data-dismiss="modal" type="button"><i
+                            class="fas fa-times fa-fw"></i></button>
+                    <a href="/"><img alt="BitChute" class="modal-logo logo-full"
+                            src="/static/v128/images/logo-full-day.png" /></a>
+                </div>
+                <div class="modal-body text-center">
+                    <p>An error has occurred whilst processing your request!</p>
+                    <img alt="Ninja" class="ninja img-responsive hidden-xs hidden-sm"
+                        src="/static/v128/images/ninja_stance.png" />
+                    <p>If the issue persists, then please contact us at <a
+                            href="/cdn-cgi/l/email-protection#e695939696899492a6848f92858e939283c885898b"><span
+                                class="__cf_email__"
+                                data-cfemail="eb989e9b9b84999fab89829f88839e9f8ec5888486">[email protected]</span></a>.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default" data-dismiss="modal" type="button"><i
+                            class="fas fa-times fa-fw"></i> Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="text-center hidden" id="alert-signup">
+        <span aria-label="Close" class="close" onclick="hideRegistrationAlert();regcookie.dismiss();"><i
+                class="fas fa-times fa-fw"></i></span>
+        <p>For a better BitChute user experience,<br /><a onclick="authShowModal('#');">Login</a> or <a
+                href="/accounts/register/">Register</a> now!</p>
+    </div>
+    <nav class="transparent" id="nav-menu">
+        <div id="nav-top-menu">
+            <div class="menu-left-container">
+                <div class="logo">
+                    <a class="spa" href="/">
+                        <img alt="BitChute" class="logo-full hidden-xs" src="/static/v128/images/logo-full-day.png" />
+                        <img alt="BitChute" class="logo-icon hidden-sm hidden-md hidden-lg hidden-xl"
+                            src="/static/v128/images/logo-icon-day.png" />
+                    </a>
+                </div>
+                <div class="search-box hidden-xs">
+                    <form action="/search/" method="get">
+                        <input class="form-control search-text" maxlength="255" name="query" placeholder="Search…"
+                            type="text">
+                        <button class="search-icon" type="submit"><i class="fas fa-search"></i></button>
+                        </input></form>
+                </div>
+            </div>
+            <div class="menu-right-container">
+                <div class="user-link help-us-grow">
+                    <a class="spa" data-placement="bottom" data-toggle="tooltip" href="/help-us-grow/"
+                        title="Help Us Grow"><i class="fas fa-donate fa-2x"></i></a>
+                </div>
+                <div class="user-link hidden" id="day-theme"><a data-placement="bottom" data-toggle="tooltip"
+                        onclick="themeDayMode();" title="Switch to Day Mode"><i class="fas fa-sun fa-2x"></i></a></div>
+                <div class="user-link hidden" id="night-theme"><a data-placement="bottom" data-toggle="tooltip"
+                        onclick="themeNightMode();" title="Switch to Night Mode"><i class="fas fa-moon fa-2x"></i></a>
+                </div>
+                <div class="user-link">
+                    <a data-placement="bottom" data-toggle="tooltip" href="/myupload/" title="Upload New Video"><i
+                            class="fas fa-upload fa-2x"></i></a>
+                </div>
+                <div class="user-link" id="menu-bar-notifications">
+                    <a class="spa" href="/notifications/" id="notifylink"><i class="fas fa-bell fa-2x"></i></a>
+                </div>
+                <div class="user-menu">
+                    <i class="fas fa-user fa-fw fa-3x user-menu-icon"></i>
+                    <div class="dropdown">
+                        <a aria-expanded="false" aria-haspopup="true" class="dropdown-toggle" data-toggle="dropdown"
+                            href="/" id="userdropdown"><img alt="user" class="lazyload"
+                                data-src="https://static-3.bitchute.com/live/profile_images/mMXFQouPBgup/None_medium.jpg"
+                                onerror="this.src='/static/v128/images/blank_medium.png';this.onerror='';"
+                                src="/static/v128/images/blank_medium.png" /></a>
+                        <ul aria-labelledby="userdropdown" class="dropdown-menu user-menu-dropdown">
+                            <li><a class="dropdown-item spa" href="/profile/"><i
+                                        class="fas fa-user fa-fw"></i>Profile</a></li>
+                            <li><a class="dropdown-item spa" href="/channel/V0YvSoiBJAny/"><i
+                                        class="fas fa-tv-retro fa-fw"></i>Motor</a></li>
+                            <li><a class="dropdown-item spa" href="/playlists/"><i
+                                        class="fas fa-list fa-fw"></i>Playlists</a></li>
+                            <li><a class="dropdown-item spa" href="/subscriptions/"><i
+                                        class="fas fa-th fa-fw"></i>Subscriptions</a></li>
+                            <li><a class="dropdown-item spa" href="/notifications/"><i
+                                        class="fas fa-bell fa-fw"></i>Notifications</a></li>
+                            <li class="dropdown-divider" role="separator"></li>
+                            <li class="hidden" id="menu-recently-viewed"><a class="dropdown-item spa"
+                                    href="/playlist/recently-viewed/"><i class="fas fa-history fa-fw"></i>Recently
+                                    Viewed</a></li>
+                            <li><a class="dropdown-item spa" href="/playlist/watch-later/"><i
+                                        class="fas fa-clock fa-fw"></i>Watch Later</a></li>
+                            <li><a class="dropdown-item spa" href="/playlist/favorites/"><i
+                                        class="fas fa-star fa-fw"></i>Favorites</a></li>
+                            <li class="dropdown-divider" role="separator"></li>
+                            <li><a class="dropdown-item spa" href="/settings/"><i
+                                        class="fas fa-cog fa-fw"></i>Settings</a></li>
+                            <li><a class="dropdown-item spa" href="/membership/"><i
+                                        class="fas fa-shopping-cart fa-fw"></i>Membership</a></li>
+                            <li><a class="dropdown-item spa" href="/monetization/"><i
+                                        class="fas fa-usd-circle fa-fw"></i>Monetization</a></li>
+                            <li class="dropdown-divider" role="separator"></li>
+                            <li><a class="dropdown-item spa" href="/help-us-grow/"><i
+                                        class="fas fa-donate fa-fw"></i>Help Us Grow</a></li>
+                            <li class="dropdown-divider" role="separator"></li>
+                            <li><a class="dropdown-item" href="/accounts/logout/"><i
+                                        class="fas fa-sign-out fa-fw"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="nav-side-menu">
+            <a class="side-toggle" onclick="toggleSideMenu();">
+                <i class="side-menu-hidden fas fa-bars fa-fw"></i>
+                <i class="side-menu-visible fas fa-times fa-fw hidden"></i>
+            </a>
+            <div class="search-box">
+                <form action="/search/" method="get">
+                    <input class="form-control search-text" maxlength="255" name="query" placeholder="Search…"
+                        type="text">
+                    <button class="search-icon" type="submit"><i class="fas fa-search"></i></button>
+                    </input></form>
+            </div>
+            <div class="side-content">
+                <p class="side-heading">Categories</p>
+                <ul class="side-list list-unstyled">
+                    <li><a class="spa" href="/category/animation/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Anime &amp; Animation</a></li>
+                    <li><a class="spa" href="/category/arts/"><i class="fal fa-chevron-double-right fa-xs"></i> Arts
+                            &amp; Literature</a></li>
+                    <li><a class="spa" href="/category/vehicles/"><i class="fal fa-chevron-double-right fa-xs"></i> Auto
+                            &amp; Vehicles</a></li>
+                    <li><a class="spa" href="/category/beauty/"><i class="fal fa-chevron-double-right fa-xs"></i> Beauty
+                            &amp; Fashion</a></li>
+                    <li><a class="spa" href="/category/finance/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Business &amp; Finance</a></li>
+                    <li><a class="spa" href="/category/cuisine/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Cuisine</a></li>
+                    <li><a class="spa" href="/category/diy/"><i class="fal fa-chevron-double-right fa-xs"></i> DIY &amp;
+                            Gardening</a></li>
+                    <li><a class="spa" href="/category/education/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Education</a></li>
+                    <li><a class="spa" href="/category/entertainment/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Entertainment</a></li>
+                    <li><a class="spa" href="/category/gaming/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Gaming</a></li>
+                    <li><a class="spa" href="/category/health/"><i class="fal fa-chevron-double-right fa-xs"></i> Health
+                            &amp; Medical</a></li>
+                    <li><a class="spa" href="/category/music/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Music</a></li>
+                    <li><a class="spa" href="/category/news/"><i class="fal fa-chevron-double-right fa-xs"></i> News
+                            &amp; Politics</a></li>
+                    <li><a class="spa" href="/category/family/"><i class="fal fa-chevron-double-right fa-xs"></i> People
+                            &amp; Family</a></li>
+                    <li><a class="spa" href="/category/animals/"><i class="fal fa-chevron-double-right fa-xs"></i> Pets
+                            &amp; Wildlife</a></li>
+                    <li><a class="spa" href="/category/science/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Science &amp; Technology</a></li>
+                    <li><a class="spa" href="/category/spirituality/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Spirituality &amp; Faith</a></li>
+                    <li><a class="spa" href="/category/sport/"><i class="fal fa-chevron-double-right fa-xs"></i> Sports
+                            &amp; Fitness</a></li>
+                    <li><a class="spa" href="/category/travel/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Travel</a></li>
+                    <li><a class="spa" href="/category/vlogging/"><i class="fal fa-chevron-double-right fa-xs"></i>
+                            Vlogging</a></li>
+                </ul>
+                <a href="https://support.bitchute.com/policy/" rel="noopener noreferrer" target="_blank">
+                    <p class="side-heading">Policies</p>
+                </a>
+                <ul class="side-list list-unstyled">
+                    <li><a href="https://support.bitchute.com/policy/guidelines/" rel="noopener noreferrer"
+                            target="_blank"><i class="fal fa-chevron-double-right fa-xs"></i> Community Guidelines</a>
+                    </li>
+                    <li><a href="https://support.bitchute.com/policy/terms/" rel="noopener noreferrer"
+                            target="_blank"><i class="fal fa-chevron-double-right fa-xs"></i> Terms &amp; Conditions</a>
+                    </li>
+                    <li><a href="https://support.bitchute.com/policy/privacy/" rel="noopener noreferrer"
+                            target="_blank"><i class="fal fa-chevron-double-right fa-xs"></i> Privacy Policy</a></li>
+                    <li><a href="https://support.bitchute.com/policy/cookie/" rel="noopener noreferrer"
+                            target="_blank"><i class="fal fa-chevron-double-right fa-xs"></i> Cookie Policy</a></li>
+                    <li><a href="https://support.bitchute.com/policy/contact/" rel="noopener noreferrer"
+                            target="_blank"><i class="fal fa-chevron-double-right fa-xs"></i> Contact Us</a></li>
+                </ul>
+                <a href="https://support.bitchute.com/" rel="noopener noreferrer" target="_blank">
+                    <p class="side-heading">Support</p>
+                </a>
+                <ul class="side-list list-unstyled">
+                    <li><a href="https://support.bitchute.com/" rel="noopener noreferrer" target="_blank"><i
+                                class="fal fa-chevron-double-right fa-xs"></i> Knowledge Base</a></li>
+                    <li><a href="https://status.bitchute.com/" rel="noopener noreferrer" target="_blank"><i
+                                class="fal fa-chevron-double-right fa-xs"></i> Service Status</a></li>
+                </ul>
+            </div>
+            <div class="copyright">© 2017-2020 Bit Chute Limited</div>
+        </div>
+    </nav>
+    <div id="nav-menu-buffer"></div>
+    <div id="wrapper">
+        <div class="transparent" id="main-content">
+            <div class="container">
+                <div class="row" id="page-bar">
+                    <div class="col-xs-12">
+                        <div class="page-bar-container">
+                            <h1 class="page-title">Your Notifications</h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="page-detail">
+                    <div class="col-xs-12">
+                        <div class="notification-actions text-right">
+                            <span class="scripted-link notification-readall">Mark all read</span> / <span
+                                class="scripted-link notification-clearall">Delete all</span>
+                        </div>
+                        <div class="notification-list">
+                            <div class="notification-item" id="notification-766543326">
+                                <a class="notification-view" data-notification="766543326"
+                                    href="/video/DfdPLmDoZNn9/?list=notifications&amp;randomize=false">
+                                    <p class="notification-text">
+                                        <span class="notification-read hidden">VIDEO</span>
+                                        <span class="notification-unread">NEW VIDEO</span>
+                                        <span class="notification-target">Combat EVOLVED: The Drone Swarm</span>
+                                    </p>
+                                    <p><span class="notification-detail">Black Pigeon Speaks - 4 days, 8 hours
+                                            ago</span></p>
+                                </a>
+                                <div class="toolbox">
+                                    <span class="toolbox-button playlist-watch-later" data-placement="bottom"
+                                        data-toggle="tooltip" data-video="DfdPLmDoZNn9" title="Watch later">
+                                        <i class="fas fa-clock active"></i>
+                                        <i class="fas fa-check hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-toggle-read" data-notification="766543326"
+                                        data-placement="bottom" data-toggle="tooltip" title="Mark read">
+                                        <i class="far fa-envelope"></i>
+                                        <i class="far fa-envelope-open hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-delete" data-notification="766543326"
+                                        data-placement="bottom" data-toggle="tooltip" title="Delete">
+                                        <i class="far fa-times"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="notification-item" id="notification-756563585">
+                                <a class="notification-view" data-notification="756563585"
+                                    href="/video/5vnIKCCYzJIo/?list=notifications&amp;randomize=false">
+                                    <p class="notification-text">
+                                        <span class="notification-read hidden">VIDEO</span>
+                                        <span class="notification-unread">NEW VIDEO</span>
+                                        <span class="notification-target">Tom Jewns</span>
+                                    </p>
+                                    <p><span class="notification-detail">Emily Youcis - 1 week, 4 days ago</span></p>
+                                </a>
+                                <div class="toolbox">
+                                    <span class="toolbox-button playlist-watch-later" data-placement="bottom"
+                                        data-toggle="tooltip" data-video="5vnIKCCYzJIo" title="Watch later">
+                                        <i class="fas fa-clock active"></i>
+                                        <i class="fas fa-check hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-toggle-read" data-notification="756563585"
+                                        data-placement="bottom" data-toggle="tooltip" title="Mark read">
+                                        <i class="far fa-envelope"></i>
+                                        <i class="far fa-envelope-open hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-delete" data-notification="756563585"
+                                        data-placement="bottom" data-toggle="tooltip" title="Delete">
+                                        <i class="far fa-times"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="notification-item" id="notification-754735779">
+                                <a class="notification-view" data-notification="754735779"
+                                    href="/video/QsfCiHWCbhm5/?list=notifications&amp;randomize=false">
+                                    <p class="notification-text">
+                                        <span class="notification-read hidden">VIDEO</span>
+                                        <span class="notification-unread">NEW VIDEO</span>
+                                        <span class="notification-target">Biden &amp; Big Tech's FEAR &amp; LOATHING of
+                                            HUNGARY</span>
+                                    </p>
+                                    <p><span class="notification-detail">Black Pigeon Speaks - 1 week, 6 days ago</span>
+                                    </p>
+                                </a>
+                                <div class="toolbox">
+                                    <span class="toolbox-button playlist-watch-later" data-placement="bottom"
+                                        data-toggle="tooltip" data-video="QsfCiHWCbhm5" title="Watch later">
+                                        <i class="fas fa-clock active"></i>
+                                        <i class="fas fa-check hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-toggle-read" data-notification="754735779"
+                                        data-placement="bottom" data-toggle="tooltip" title="Mark read">
+                                        <i class="far fa-envelope"></i>
+                                        <i class="far fa-envelope-open hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-delete" data-notification="754735779"
+                                        data-placement="bottom" data-toggle="tooltip" title="Delete">
+                                        <i class="far fa-times"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="notification-item" id="notification-750717448">
+                                <a class="notification-view" data-notification="750717448"
+                                    href="/video/yG5nqlMv48c/?list=notifications&amp;randomize=false">
+                                    <p class="notification-text">
+                                        <span class="notification-read hidden">VIDEO</span>
+                                        <span class="notification-unread">NEW VIDEO</span>
+                                        <span class="notification-target">TL;DR - Steam Fails: Getting Woke</span>
+                                    </p>
+                                    <p><span class="notification-detail">TealDeer - 2 weeks, 2 days ago</span></p>
+                                </a>
+                                <div class="toolbox">
+                                    <span class="toolbox-button playlist-watch-later" data-placement="bottom"
+                                        data-toggle="tooltip" data-video="yG5nqlMv48c" title="Watch later">
+                                        <i class="fas fa-clock active"></i>
+                                        <i class="fas fa-check hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-toggle-read" data-notification="750717448"
+                                        data-placement="bottom" data-toggle="tooltip" title="Mark read">
+                                        <i class="far fa-envelope"></i>
+                                        <i class="far fa-envelope-open hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-delete" data-notification="750717448"
+                                        data-placement="bottom" data-toggle="tooltip" title="Delete">
+                                        <i class="far fa-times"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="notification-item" id="notification-747178189">
+                                <a class="notification-view" data-notification="747178189"
+                                    href="/video/QHkumL7dgEtJ/?list=notifications&amp;randomize=false">
+                                    <p class="notification-text">
+                                        <span class="notification-read hidden">VIDEO</span>
+                                        <span class="notification-unread">NEW VIDEO</span>
+                                        <span class="notification-target">OP;ED - We No Longer Share A Reality</span>
+                                    </p>
+                                    <p><span class="notification-detail">TealDeer - 2 weeks, 5 days ago</span></p>
+                                </a>
+                                <div class="toolbox">
+                                    <span class="toolbox-button playlist-watch-later" data-placement="bottom"
+                                        data-toggle="tooltip" data-video="QHkumL7dgEtJ" title="Watch later">
+                                        <i class="fas fa-clock active"></i>
+                                        <i class="fas fa-check hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-toggle-read" data-notification="747178189"
+                                        data-placement="bottom" data-toggle="tooltip" title="Mark read">
+                                        <i class="far fa-envelope"></i>
+                                        <i class="far fa-envelope-open hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-delete" data-notification="747178189"
+                                        data-placement="bottom" data-toggle="tooltip" title="Delete">
+                                        <i class="far fa-times"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="notification-item" id="notification-744054433">
+                                <a class="notification-view" data-notification="744054433"
+                                    href="/video/MirJ2dM7thrR/?list=notifications&amp;randomize=false">
+                                    <p class="notification-text">
+                                        <span class="notification-read hidden">VIDEO</span>
+                                        <span class="notification-unread">NEW VIDEO</span>
+                                        <span class="notification-target">2020 -TOKYO's Strange Lockdown: A
+                                            Walk-through---AGAIN</span>
+                                    </p>
+                                    <p><span class="notification-detail">Black Pigeon Speaks - 3 weeks ago</span></p>
+                                </a>
+                                <div class="toolbox">
+                                    <span class="toolbox-button playlist-watch-later" data-placement="bottom"
+                                        data-toggle="tooltip" data-video="MirJ2dM7thrR" title="Watch later">
+                                        <i class="fas fa-clock active"></i>
+                                        <i class="fas fa-check hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-toggle-read" data-notification="744054433"
+                                        data-placement="bottom" data-toggle="tooltip" title="Mark read">
+                                        <i class="far fa-envelope"></i>
+                                        <i class="far fa-envelope-open hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-delete" data-notification="744054433"
+                                        data-placement="bottom" data-toggle="tooltip" title="Delete">
+                                        <i class="far fa-times"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="notification-item" id="notification-738015436">
+                                <a class="notification-view" data-notification="738015436"
+                                    href="/video/DfmbHFosLOkV/?list=notifications&amp;randomize=false">
+                                    <p class="notification-text">
+                                        <span class="notification-read hidden">VIDEO</span>
+                                        <span class="notification-unread">NEW VIDEO</span>
+                                        <span class="notification-target">America 2020 The Great PSYOP CRISIS</span>
+                                    </p>
+                                    <p><span class="notification-detail">Black Pigeon Speaks - 3 weeks, 4 days
+                                            ago</span></p>
+                                </a>
+                                <div class="toolbox">
+                                    <span class="toolbox-button playlist-watch-later" data-placement="bottom"
+                                        data-toggle="tooltip" data-video="DfmbHFosLOkV" title="Watch later">
+                                        <i class="fas fa-clock active"></i>
+                                        <i class="fas fa-check hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-toggle-read" data-notification="738015436"
+                                        data-placement="bottom" data-toggle="tooltip" title="Mark read">
+                                        <i class="far fa-envelope"></i>
+                                        <i class="far fa-envelope-open hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-delete" data-notification="738015436"
+                                        data-placement="bottom" data-toggle="tooltip" title="Delete">
+                                        <i class="far fa-times"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="notification-item" id="notification-736940273">
+                                <a class="notification-view" data-notification="736940273"
+                                    href="/video/iQyCTReJ71dd/?list=notifications&amp;randomize=false">
+                                    <p class="notification-text">
+                                        <span class="notification-read hidden">VIDEO</span>
+                                        <span class="notification-unread">NEW VIDEO</span>
+                                        <span class="notification-target">Why the Rest of the WORLD Rejects Mail-in
+                                            Voting</span>
+                                    </p>
+                                    <p><span class="notification-detail">Black Pigeon Speaks - 3 weeks, 5 days
+                                            ago</span></p>
+                                </a>
+                                <div class="toolbox">
+                                    <span class="toolbox-button playlist-watch-later" data-placement="bottom"
+                                        data-toggle="tooltip" data-video="iQyCTReJ71dd" title="Watch later">
+                                        <i class="fas fa-clock active"></i>
+                                        <i class="fas fa-check hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-toggle-read" data-notification="736940273"
+                                        data-placement="bottom" data-toggle="tooltip" title="Mark read">
+                                        <i class="far fa-envelope"></i>
+                                        <i class="far fa-envelope-open hidden"></i>
+                                    </span>
+                                    <span class="toolbox-button notification-delete" data-notification="736940273"
+                                        data-placement="bottom" data-toggle="tooltip" title="Delete">
+                                        <i class="far fa-times"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="show-more-container">
+                            <div class="show-more"><span>SHOW MORE</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+            <script type="text/javascript">
+                $(window).off('scroll.extend').on('scroll.extend', function () { if ((window.innerHeight + Math.ceil(window.pageYOffset + 1)) >= document.body.offsetHeight) $('.show-more').click(); });
+                $(document).ready(function () {
+                    if ($('.notification-list').children('.notification-item').length < 25) $('.show-more').addClass('hidden');
+                    $('.show-more').click(function () { notificationExtend(25); });
+                    notificationAttachEvents();
+                    playlistAttachEvents();
+                    spaAttachEvents();
+                    setTimeout(notificationRefresh, 1000, false);
+                });
+            </script>
+        </div>
+        <div id="loader-container">
+            <div id="loader">
+                <ul>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="container" id="page-footer">
+        BitChute is a peer-to-peer content sharing platform. Creators are allowed to post content they produce to the
+        platform, so long as they comply with our <a href="https://support.bitchute.com/policy/"
+            rel="noopener noreferrer" target="_blank">policies</a>. The content posted to the platform is not reflective
+        or representative of the views of Bit Chute Limited, its staff or owners. © 2017-2020 Bit Chute Limited,
+        Oxford House, 12-20 Oxford Street, Newbury, Berkshire, RG14 1JB. United Kingdom. Company number 10637289.
+    </div>
+    <span class="hidden" id="display_id"></span>
+    <span class="nav-tabs-list hidden"></span>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"
+        type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/10.0.0/bootstrap-slider.min.js"
+        type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.17.0/jquery.validate.min.js"
+        type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jeditable.js/1.7.3/jeditable.min.js"
+        type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.3/toastr.min.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lazysizes/4.0.1/lazysizes.min.js"
+        type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.1/clipboard.min.js"
+        type="text/javascript"></script>
+    <script crossorigin="anonymous"
+        src="https://cdn.polyfill.io/v2/polyfill.min.js?features=es6,Array.prototype.includes,CustomEvent,Object.entries,Object.values,URL"
+        type="text/javascript"></script>
+    <script src="/static/v128/js/stream/plyr-min.js" type="text/javascript"></script>
+    <script defer="" src="/static/v128/js/third-party/jquery.ui.widget.js" type="text/javascript"></script>
+    <script defer="" src="/static/v128/js/third-party/jquery.iframe-transport.js" type="text/javascript"></script>
+    <script defer="" src="/static/v128/js/third-party/jquery.fileupload.js" type="text/javascript"></script>
+    <script defer="" src="/static/v128/js/third-party/fontawesome-all.min.js" type="text/javascript"></script>
+    <script src="/static/v128/js/third-party/rangetouch.js" type="text/javascript"></script>
+    <script src="/static/v128/js/third-party/html-ratio-component.js" type="text/javascript"></script>
+    <script src="/static/v128/js/auth.js" type="text/javascript"></script>
+    <script src="/static/v128/js/channel.js" type="text/javascript"></script>
+    <script src="/static/v128/js/channel-list.js" type="text/javascript"></script>
+    <script src="/static/v128/js/common.js" type="text/javascript"></script>
+    <script src="/static/v128/js/help-us-grow.js" type="text/javascript"></script>
+    <script src="/static/v128/js/listing.js" type="text/javascript"></script>
+    <script src="/static/v128/js/membership.js" type="text/javascript"></script>
+    <script src="/static/v128/js/moderate.js" type="text/javascript"></script>
+    <script src="/static/v128/js/monetization.js" type="text/javascript"></script>
+    <script src="/static/v128/js/notification.js" type="text/javascript"></script>
+    <script src="/static/v128/js/playlist.js" type="text/javascript"></script>
+    <script src="/static/v128/js/search.js" type="text/javascript"></script>
+    <script src="/static/v128/js/upload.js" type="text/javascript"></script>
+    <script src="/static/v128/js/video.js" type="text/javascript"></script>
+    <script async="" src="https://cdn.jsdelivr.net/npm/p2p-media-loader-core@latest/build/p2p-media-loader-core.min.js"
+        type="text/javascript"></script>
+    <script async="" src="/static/v128/js/stream/p2p-graph.js" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js" type="text/javascript"></script>
+    <script async="" src="https://cdnjs.cloudflare.com/ajax/libs/rickshaw/1.6.3/rickshaw.min.js"
+        type="text/javascript"></script>
+    <script src="/static/v128/js/cookielaw.js" type="text/javascript"></script>
+    <script type="text/javascript"></script>
+    <script type="text/javascript">setTimeout(notificationRefresh, 1000, true);</script>
+    <script type="text/javascript">channelCreateAttach();</script>
+</body>
+
+</html>
