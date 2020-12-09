@@ -1,10 +1,2 @@
-v1.0.0
+v0.0.1
 - Initial version
-
-v1.1.0
-- Improved user handling. The user now only sees/needs to enter the display name, and the dlive block chain id is dealt with internally. Includes some
-  error checking and warnings too. If the user changes their display ID it should fail with a warning so they know what happened.
-- Code tidying - Python PEP8
-- Reorg and abstract away the DLIVE stuff, so it's hidden inside python classes/methods
-- Ran kodi-addon-checker and cleaned up errors. Icon sizes, fan art icon, XML missing attributes etc, minor stuff
-- Set default user to DLive
