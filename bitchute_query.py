@@ -32,9 +32,9 @@ class Subscription():
 
 class Notification():
 
-    def __init__(self, videoURL, notification_detail):
-        self.videoURL = videoURL
-        self.channel_id = videoURL.split('/')[1]
+    def __init__(self, video_id, notification_detail):
+        self.video_id = video_id
+        self.channel_id = video_id
         # split(vid"/video/5vnIKCCYzJIo/?list=notifications&amp;randomize=false"
         self.notification_detail = notification_detail
 
@@ -116,11 +116,11 @@ class BitChute():
 
         for n in containers:
 
-            videoURL = n.find(class_="notification-view").attrs["href"]
+            video_id = n.find(class_="notification-view").attrs["href"]
             notification_detail = n.find(
                 class_="notification-detail").contents[0]
 
-            s = Notification(videoURL=videoURL,
+            s = Notification(video_id=video_id,
                              notification_detail=notification_detail)
             notifs.append(s)
 

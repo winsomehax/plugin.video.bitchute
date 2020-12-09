@@ -112,8 +112,7 @@ def build_notifications():
         store.menu.new_info_item("** YOU HAVE NO NOTIFICATIONS **")
     else:
         for n in notifications:
-            store.menu.new_video_item(displayName=n.notification_detail, title="",
-                    playURL=n.videoURL, thumbURL="", duration=0)
+            store.menu.new_folder_item(item_name=n.notification_detail, func=play_folder, item_val=n.video_id.split("/")[2])
 
     store.menu.end_folder()
 
