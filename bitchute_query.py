@@ -38,6 +38,13 @@ class Notification():
         # split(vid"/video/5vnIKCCYzJIo/?list=notifications&amp;randomize=false"
         self.notification_detail = notification_detail
 
+class PlaylistEntry():
+
+    def __init__(self, video_id, description, title, poster):
+        self.video_id = video_id
+        self.description = description
+        self.title = title
+        self.poster = poster
 
 class BitChute():
 
@@ -141,8 +148,6 @@ class BitChute():
 
         containers = soup.find_all(class_="channel-videos-container")
 
-        print(len(containers))
-
         for n in containers:
             t = n.find(class_="channel-videos-title").find("a")
             video_id=t.attrs["href"].replace("/video/", "").strip("/")
@@ -154,6 +159,36 @@ class BitChute():
             videos.append(s)
 
         return videos
+
+    def get_playlist(self, playlist_name):
+
+        #"favorites", "watch-later"
+
+        if not self.logged_in:
+            return
+
+        playlist = []
+
+        url = "https://www.bitchute.com/playlist/"+playlist_name+"/"
+
+        req = requests.get(url, cookies=self.csrfJar)
+        self.csrfJar = req.cookies
+
+        soup = BeautifulSoup(req.text, "html.parser")
+
+        containers = soup.find_all(class_="playlist-video")
+
+        for n in containers:
+            t = n.find(class_="text-container").find("a")
+            video_id=t.attrs["href"].replace("/video/", "").split("/")[0]
+            title=n.find(class_="title").find("a").contents[0]     
+            description = n.find(class_="description hidden-xs").get_text()
+            poster=n.find(class_="image-container").find("img").attrs['data-src']
+
+            s = PlaylistEntry(video_id=video_id,description=description, title=title,poster=poster)
+            playlist.append(s)
+
+        return playlist
 
     def get_video(self, video_id):
         url = "https://www.bitchute.com/video/"+video_id

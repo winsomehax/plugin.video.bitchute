@@ -47,6 +47,21 @@ def notifications():
 
     build_notifications()
 
+@plugin.route('/favourites')
+def favourites():
+    if not valid_user:
+        return
+
+    build_playlist("favorites") # NOTE: US spelling. yuck.
+
+
+@plugin.route('/watch-later')
+def watch_later():
+    if not valid_user:
+        return
+
+    build_playlist("watch-later")
+
 
 @plugin.route('/play_folder/<item_val>')
 def play_folder(item_val):
@@ -81,6 +96,10 @@ def build_main_menu():
         item_name="Subscriptions", item_val=None, func=subscriptions)
     store.menu.new_folder_item(
         item_name="Notifications", item_val=None, func=notifications)
+    store.menu.new_folder_item(
+        item_name="Favourites", item_val=None, func=favourites)
+    store.menu.new_folder_item(
+        item_name="Watch Later", item_val=None, func=watch_later)
 
     store.menu.end_folder()
 
@@ -136,6 +155,20 @@ def build_and_play(item_val):
     video=store.bitchute.get_video(item_val)
     store.menu.new_video_item(displayName=video.title, title="", playURL=video.videoURL, thumbURL=video.poster, duration=0)
    
+    store.menu.end_folder()
+
+def build_playlist(playlist):
+    global store
+    store.menu.start_folder()
+
+    entries = store.bitchute.get_playlist(playlist)
+
+    if 0 == len(entries):
+        store.menu.new_info_item("** NO VIDEOS FOUND **")
+    else:
+        for n in entries:
+            store.menu.new_folder_item(item_name=n.title, func=play_folder, item_val=n.video_id)
+
     store.menu.end_folder()
 
 
