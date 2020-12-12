@@ -1,17 +1,19 @@
 import routing
-from xbmcgui import Dialog, INPUT_ALPHANUM
+from xbmcgui import Dialog, INPUT_ALPHANUM, ListItem
 import xbmcaddon
 import bitchute_query
 import KODIMenu as kodi_menu
 
 plugin = routing.Plugin()
 
+
 class Config():
 
-    bitchute=None
-    menu=None
+    bitchute = None
+    menu = None
 
-store=Config
+
+store = Config
 
 
 def valid_user():
@@ -47,12 +49,13 @@ def notifications():
 
     build_notifications()
 
+
 @plugin.route('/favourites')
 def favourites():
     if not valid_user:
         return
 
-    build_playlist("favorites") # NOTE: US spelling. yuck.
+    build_playlist("favorites")  # NOTE: US spelling. yuck.
 
 
 @plugin.route('/watch-later')
@@ -63,13 +66,23 @@ def watch_later():
     build_playlist("watch-later")
 
 
-@plugin.route('/play_folder/<item_val>')
+""" @plugin.route('/play_folder/<item_val>')
 def play_folder(item_val):
 
     if not valid_user:
         return
 
     build_and_play(item_val)
+ """
+
+
+@plugin.route('/play_now/<item_val>')
+def play_now(item_val):
+
+    if not valid_user:
+        return
+
+    play_video(item_val)
 
 
 @plugin.route('/channel/<item_val>')
@@ -87,11 +100,12 @@ def open_settings():
 
 
 def build_main_menu():
-   
+
     global store
     store.menu.start_folder()
 
-    store.menu.new_folder_item(item_name="Set your Bitchute user", item_val=None, func=open_settings)
+    store.menu.new_folder_item(
+        item_name="Set your Bitchute user", item_val=None, func=open_settings)
     store.menu.new_folder_item(
         item_name="Subscriptions", item_val=None, func=subscriptions)
     store.menu.new_folder_item(
@@ -100,7 +114,6 @@ def build_main_menu():
         item_name="Favourites", item_val=None, func=favourites)
     store.menu.new_folder_item(
         item_name="Watch Later", item_val=None, func=watch_later)
-
     store.menu.end_folder()
 
 
@@ -109,13 +122,14 @@ def build_subscriptions():
     global store
     store.menu.start_folder()
 
-    subscriptions = store.bitchute.subscriptions()
+    subscriptions = store.bitchute.get_subscriptions()
 
     if 0 == len(subscriptions):
         store.menu.new_info_item("** YOU HAVE NO SUBSCRIPTIONS **")
     else:
         for sub in subscriptions:
-            store.menu.new_folder_item(item_name=sub.name, func=channel, item_val=sub.channel)
+            store.menu.new_folder_item(
+                item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image)
 
     store.menu.end_folder()
 
@@ -125,37 +139,31 @@ def build_notifications():
     global store
     store.menu.start_folder()
 
-    notifications = store.bitchute.notifications()
+    notifications = store.bitchute.get_notifications()
 
     if 0 == len(notifications):
         store.menu.new_info_item("** YOU HAVE NO NOTIFICATIONS **")
     else:
         for n in notifications:
-            store.menu.new_folder_item(item_name=n.notification_detail, func=play_folder, item_val=n.video_id.split("/")[2])
+            store.menu.new_folder_item(item_name=n.notification_detail, func=play_now, item_val=n.video_id,
+                                       iconURL="https://www.bitchute.com/static/v129/images/logo-full-day.png")
 
     store.menu.end_folder()
+
 
 def build_a_channel(item_val):
 
- 
     global store
     store.menu.start_folder()
 
-    videos=store.bitchute.get_channel(item_val)
+    videos = store.bitchute.get_channel(item_val)
 
     for v in videos:
-        store.menu.new_folder_item(item_name=v.title, func=play_folder, item_val=v.video_id)
+        store.menu.new_folder_item(
+            item_name=v.title, func=play_now, item_val=v.video_id, iconURL=v.poster)
 
     store.menu.end_folder()
 
-def build_and_play(item_val):
-    global store
-
-    store.menu.start_folder()
-    video=store.bitchute.get_video(item_val)
-    store.menu.new_video_item(displayName=video.title, title="", playURL=video.videoURL, thumbURL=video.poster, duration=0)
-   
-    store.menu.end_folder()
 
 def build_playlist(playlist):
     global store
@@ -167,24 +175,33 @@ def build_playlist(playlist):
         store.menu.new_info_item("** NO VIDEOS FOUND **")
     else:
         for n in entries:
-            store.menu.new_folder_item(item_name=n.title, func=play_folder, item_val=n.video_id)
+            #store.menu.new_video_item(displayName=v.title, title="", playURL=v.videoURL, thumbURL="", duration=0)
+            store.menu.new_folder_item(
+                item_name=n.title, func=play_now, item_val=n.video_id)
 
     store.menu.end_folder()
 
 
+def play_video(video_id):
+
+    global store
+    v = store.bitchute.get_video(video_id)
+    store.menu.play_now(v.videoURL)
+
+
 def build_open_settings():
     xbmcaddon.Addon().openSettings()
-    user=xbmcaddon.Addon().getSetting("user")
-    password=xbmcaddon.Addon().getSetting("password")
+    user = xbmcaddon.Addon().getSetting("user")
+    password = xbmcaddon.Addon().getSetting("password")
 
-    store.bitchute = bitchute_query.BitChute(user,password)
+    store.bitchute = bitchute_query.BitChute(user, password)
 
 
 if store.bitchute is None:
-    user=xbmcaddon.Addon().getSetting("user")
-    password=xbmcaddon.Addon().getSetting("password")
+    user = xbmcaddon.Addon().getSetting("user")
+    password = xbmcaddon.Addon().getSetting("password")
 
-    store.bitchute = bitchute_query.BitChute(user,password)
+    store.bitchute = bitchute_query.BitChute(user, password)
 
 if store.menu is None:
     store.menu = kodi_menu.KODIMenu(plugin)
