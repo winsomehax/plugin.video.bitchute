@@ -1,4 +1,4 @@
-from xbmcplugin import addDirectoryItem, endOfDirectory, setContent, setResolvedUrl
+from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
 from xbmcgui import ListItem
 from xbmc import Player
 
