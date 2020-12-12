@@ -9,16 +9,18 @@ class Video():
         self.videoURL = videoURL
         self.poster = poster
         self.title = title
-        self.description=description
+        self.description = description
 
 
 class ChannelEntry():
 
-    def __init__(self, video_id, poster, title, description):
+    def __init__(self, video_id, poster, title, description, channel_id):
+        self.channel_id = channel_id
         self.video_id = video_id
         self.poster = poster
         self.title = title
-        self.description=description
+        self.description = description
+
 
 class Subscription():
 
@@ -38,6 +40,7 @@ class Notification():
         # split(vid"/video/5vnIKCCYzJIo/?list=notifications&amp;randomize=false"
         self.notification_detail = notification_detail
 
+
 class PlaylistEntry():
 
     def __init__(self, video_id, description, title, poster):
@@ -46,6 +49,7 @@ class PlaylistEntry():
         self.title = title
         self.poster = poster
 
+
 class BitChute():
 
     def __init__(self, user, password):
@@ -53,7 +57,7 @@ class BitChute():
         self.username = user
         self.password = password
         self.logged_in = False
-        token = ""
+        self.token = ""
         url = "https://www.bitchute.com/accounts/login/"
         req = requests.get(url)
         csrfJar = req.cookies
@@ -61,12 +65,12 @@ class BitChute():
         metas = soup.find_all("input")
         for meta in metas:
             if meta.attrs['name'] == "csrfmiddlewaretoken":
-                token = meta.attrs['value']
+                self.token = meta.attrs['value']
 
-        if token != "":
+        if self.token != "":
 
             baseURL = "https://www.bitchute.com"
-            post_data = {'csrfmiddlewaretoken': token,
+            post_data = {'csrfmiddlewaretoken': self.token,
                          'username': self.username, 'password': self.password}
             headers = {'Referer': baseURL + "/", 'Origin': baseURL}
             response = requests.post(
@@ -76,7 +80,7 @@ class BitChute():
             self.csrfJar = response.cookies
             self.logged_in = True
 
-    def subscriptions(self):
+    def get_subscriptions(self):
 
         if not self.logged_in:
             return
@@ -92,13 +96,15 @@ class BitChute():
         containers = soup.find_all(class_="subscription-container")
 
         for sub in containers:
-            name = sub.find(class_="subscription-name").contents[0]
+            channel = sub.find("a").attrs["href"].split("/")[1]
+            channel_image = sub.find("a").find("img").attrs["data-src"]
+            name = sub.find(class_="subscription-name").get_text()
+            description_text = sub.find(
+                class_="subscription-description").get_text()
             channel = sub.find(class_="spa").attrs["href"]
-            last_video = sub.find(class_="subscription-last-video").contents[0]
+            last_video = sub.find(class_="subscription-last-video").get_text()
             description_text = sub.find(
                 class_="subscription-description-text").contents
-            channel_image = sub.find(
-                class_="subscription-image lazyload").attrs['data-src']
 
             s = Subscription(name=name, channel=channel, last_video=last_video,
                              description_text=description_text, channel_image=channel_image)
@@ -106,7 +112,7 @@ class BitChute():
 
         return subs
 
-    def notifications(self):
+    def get_notifications(self):
 
         if not self.logged_in:
             return
@@ -122,8 +128,8 @@ class BitChute():
         containers = soup.find_all(class_="notification-item")
 
         for n in containers:
-
-            video_id = n.find(class_="notification-view").attrs["href"]
+            video_id = n.find(
+                class_="notification-view").attrs["href"].replace("/video/", "").strip("/")
             notification_detail = n.find(
                 class_="notification-detail").contents[0]
 
@@ -146,16 +152,20 @@ class BitChute():
 
         soup = BeautifulSoup(req.text, "html.parser")
 
+        # channel_id=soup.find(id_="canonical").attrs["href"].replace("https://www.bitchute.com/channel/","").strip("/")
+        channel_id = ""
+
         containers = soup.find_all(class_="channel-videos-container")
 
         for n in containers:
             t = n.find(class_="channel-videos-title").find("a")
-            video_id=t.attrs["href"].replace("/video/", "").strip("/")
-            title=t.contents[0]     
+            video_id = t.attrs["href"].replace("/video/", "").strip("/")
+            title = t.contents[0]
             description = n.find(class_="channel-videos-text").get_text()
-            poster=n.find(class_="channel-videos-image").find("img").attrs['data-src']
-            s = ChannelEntry(video_id=video_id,description=description, title=title,poster=poster)
-            print("&&&& ", title, poster)
+            poster = n.find(
+                class_="channel-videos-image").find("img").attrs['data-src']
+            s = ChannelEntry(video_id=video_id, description=description,
+                             title=title, poster=poster, channel_id=channel_id)
             videos.append(s)
 
         return videos
@@ -180,12 +190,14 @@ class BitChute():
 
         for n in containers:
             t = n.find(class_="text-container").find("a")
-            video_id=t.attrs["href"].replace("/video/", "").split("/")[0]
-            title=n.find(class_="title").find("a").contents[0]     
+            video_id = t.attrs["href"].replace("/video/", "").split("/")[0]
+            title = n.find(class_="title").find("a").contents[0]
             description = n.find(class_="description hidden-xs").get_text()
-            poster=n.find(class_="image-container").find("img").attrs['data-src']
+            poster = n.find(
+                class_="image-container").find("img").attrs['data-src']
 
-            s = PlaylistEntry(video_id=video_id,description=description, title=title,poster=poster)
+            s = PlaylistEntry(
+                video_id=video_id, description=description, title=title, poster=poster)
             playlist.append(s)
 
         return playlist
@@ -201,6 +213,7 @@ class BitChute():
         poster = soup.find("video").attrs["poster"]
         title = soup.find(id="video-title").contents[0]
 
-        video = Video(videoURL=videoURL, poster=poster, title=title, description="")
+        video = Video(videoURL=videoURL, poster=poster,
+                      title=title, description="")
 
         return (video)
