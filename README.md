@@ -28,5 +28,8 @@ Please note: I don't care if you have a problem with Bitchute and its stance on 
 
 It's yours. If you break it, you can keep the pieces. If you want to add stuff feel free. You just need to follow the GPL and make your improvements available to others.
 
-Like KODI, this add-in code is free and will remain so. If you'd like to support work on it, then it would be appreciated. Throw a few satoshis (Bitcoin) to: 
-### 3LNnxm4NbpcSs1eqSnndvx83zCx6mwqf7K
+Like KODI, this add-in code is free and will remain so. If you'd like to support work on it, then it would be appreciated. Throw a few satoshis (Bitcoin) to:
+
+![BC](assets/bcaddress.png)
+
+3LNnxm4NbpcSs1eqSnndvx83zCx6mwqf7K
