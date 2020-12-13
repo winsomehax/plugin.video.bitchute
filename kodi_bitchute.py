@@ -1,5 +1,5 @@
 import routing
-from xbmcgui import Dialog, INPUT_ALPHANUM, ListItem
+from xbmcgui import Dialog
 import xbmcaddon
 import bitchute_query
 import KODIMenu as kodi_menu
@@ -144,7 +144,7 @@ def build_subscriptions():
     else:
         for sub in subscriptions:
             store.menu.new_folder_item(
-                item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image)
+                item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image, description=sub.description)
 
     store.menu.end_folder()
 
@@ -191,7 +191,7 @@ def build_playlist(playlist):
     else:
         for n in entries:
             store.menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id)
+                item_name=n.title, func=play_now, item_val=n.video_id, description=n.description, iconURL=n.poster)
 
     store.menu.end_folder()
 
