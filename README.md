@@ -24,6 +24,6 @@ and its code.
 
 Please note: I don't care if you have a problem with Bitchute and its stance on free speech. That's your choice. Use something else instead.
 
-##Disclaimer
+## Disclaimer
 
 It's yours. If you break it, you can keep the pieces. If you want to add stuff feel free. You just need to follow the GPL and make your improvements available to others.
