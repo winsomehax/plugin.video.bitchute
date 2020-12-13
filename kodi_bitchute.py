@@ -73,6 +73,13 @@ def popular():
 
     build_popular()
 
+@plugin.route('/trending')
+def trending():
+    if not valid_user:
+        return
+
+    build_trending()
+
 
 @plugin.route('/play_now/<item_val>')
 def play_now(item_val):
@@ -114,6 +121,8 @@ def build_main_menu():
         item_name="Watch Later", item_val=None, func=watch_later)
     store.menu.new_folder_item(
         item_name="Popular", item_val=None, func=popular)
+    store.menu.new_folder_item(
+        item_name="Trending", item_val=None, func=trending)
     store.menu.end_folder()
 
 
@@ -186,6 +195,22 @@ def build_popular():
     store.menu.start_folder()
 
     entries = store.bitchute.get_popular()
+
+    if 0 == len(entries):
+        store.menu.new_info_item("** NO VIDEOS FOUND **")
+    else:
+        for n in entries:
+            store.menu.new_folder_item(
+                item_name=n.title, func=play_now, item_val=n.video_id, iconURL=n.poster)
+
+    store.menu.end_folder()
+
+
+def build_trending():
+    global store
+    store.menu.start_folder()
+
+    entries = store.bitchute.get_trending()
 
     if 0 == len(entries):
         store.menu.new_info_item("** NO VIDEOS FOUND **")

@@ -245,3 +245,30 @@ class BitChute():
             playlist.append(s)
 
         return playlist        
+
+    def get_trending(self):
+
+        playlist = []
+
+        url = "https://www.bitchute.com/"
+
+        req = requests.get(url, cookies=self.csrfJar)
+        self.csrfJar = req.cookies
+
+        soup = BeautifulSoup(req.text, "html.parser")
+
+        popular=soup.find(id="listing-trending")
+
+        containers = popular.find_all(class_="video-result-container")
+
+        for n in containers:
+            video_id=n.find(class_="video-result-image-container").find("a").attrs["href"].split("/")[2].replace("/","")
+            poster=n.find(class_="video-result-image").find("img").attrs["data-src"]
+            title=n.find(class_="video-result-title").find("a").get_text()
+            description=n.find(class_="video-result-text").get_text()
+
+            s = PlaylistEntry(
+                video_id=video_id, description=description, title=title, poster=poster)
+            playlist.append(s)
+
+        return playlist    
