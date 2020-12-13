@@ -36,7 +36,7 @@ def index():
 @plugin.route('/subscriptions')
 def subscriptions():
 
-    if not valid_user:
+    if not valid_user():
         return
 
     build_subscriptions()
@@ -44,7 +44,7 @@ def subscriptions():
 
 @plugin.route('/notifications')
 def notifications():
-    if not valid_user:
+    if not valid_user():
         return
 
     build_notifications()
@@ -52,7 +52,7 @@ def notifications():
 
 @plugin.route('/favourites')
 def favourites():
-    if not valid_user:
+    if not valid_user():
         return
 
     build_playlist("favorites")  # NOTE: US spelling. yuck.
@@ -60,7 +60,7 @@ def favourites():
 
 @plugin.route('/watch-later')
 def watch_later():
-    if not valid_user:
+    if not valid_user():
         return
 
     build_playlist("watch-later")
@@ -68,23 +68,27 @@ def watch_later():
 
 @plugin.route('/popular')
 def popular():
-    if not valid_user:
-        return
 
     build_popular()
 
 @plugin.route('/trending')
 def trending():
-    if not valid_user:
-        return
 
     build_trending()
+
+
+@plugin.route('/video_by_id')
+def video_by_id():
+    
+    d=Dialog()
+    v=d.input("Enter the video ID")
+    play_video(v)
 
 
 @plugin.route('/play_now/<item_val>')
 def play_now(item_val):
 
-    if not valid_user:
+    if not valid_user():
         return
 
     play_video(item_val)
@@ -93,7 +97,7 @@ def play_now(item_val):
 @plugin.route('/channel/<item_val>')
 def channel(item_val):
 
-    if not valid_user:
+    if not valid_user():
         return
 
     build_a_channel(item_val)
@@ -123,6 +127,8 @@ def build_main_menu():
         item_name="Popular", item_val=None, func=popular)
     store.menu.new_folder_item(
         item_name="Trending", item_val=None, func=trending)
+    store.menu.new_folder_item(
+        item_name="Open a video by ID", item_val=None, func=video_by_id)        
     store.menu.end_folder()
 
 

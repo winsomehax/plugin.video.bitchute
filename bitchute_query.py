@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+import json
 
 
 class Video():
@@ -39,6 +40,7 @@ class Notification():
         self.channel_id = video_id
         # split(vid"/video/5vnIKCCYzJIo/?list=notifications&amp;randomize=false"
         self.notification_detail = notification_detail
+        self.logged_in = False
 
 
 class PlaylistEntry():
@@ -78,7 +80,9 @@ class BitChute():
 
             # it's the cookies that carry forward the token/ids
             self.csrfJar = response.cookies
-            self.logged_in = True
+            if 200==response.status_code:
+                if json.loads(response.text)['success']==True:
+                    self.logged_in=True
 
     def get_subscriptions(self):
 
