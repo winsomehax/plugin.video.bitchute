@@ -30,4 +30,6 @@ It's yours. If you break it, you can keep the pieces. If you want to add stuff f
 
 Like KODI, this add-in code is free and will remain so. If you'd like to support work on it, then it would be appreciated. Throw a few satoshis (Bitcoin) to:
 
-### 3LNnxm4NbpcSs1eqSnndvx83zCx6mwqf7K
+![BC](assets/bcaddress.png)
+
+3LNnxm4NbpcSs1eqSnndvx83zCx6mwqf7K
