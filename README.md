@@ -18,7 +18,7 @@ The plugin has to rely on scraping using the Beautiful Soup 4 library because th
 the documentation is... feel free to let me know in the github issues. If there is a proper authentication mechanism (OAUTH2 for example) then it could remove
 the need to store user_ids and password in KODI settings and making working with the site much easier and more reliable.
 
-Certain options such as "Popular" and "Trending" may function without login details  as they are scraped from the front page. I'm hoping to allow users 
+Certain options such as "Popular" and "Trending" function without login details as they are 'scraped' from the front page. I'm hoping to allow users 
 to explore the site using KODI (without the need to have a login), but it's a matter of how to translate that into KODI's awkward interface 
 and its code.
 
