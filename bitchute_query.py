@@ -217,3 +217,31 @@ class BitChute():
                       title=title, description="")
 
         return (video)
+
+    def get_popular(self):
+        #"favorites", "watch-later"
+
+        playlist = []
+
+        url = "https://www.bitchute.com/"
+
+        req = requests.get(url, cookies=self.csrfJar)
+        self.csrfJar = req.cookies
+
+        soup = BeautifulSoup(req.text, "html.parser")
+
+        popular=soup.find(id="listing-popular")
+
+        containers = popular.find_all(class_="video-card")
+
+        for n in containers:
+            poster=n.find("img").attrs["data-src"]
+            video_id=n.find(class_="video-card-id hidden").get_text()
+            title=n.find(class_="video-card-title").find("a").get_text()
+            description=n.find(class_="video-card-channel").find("a").get_text()
+
+            s = PlaylistEntry(
+                video_id=video_id, description=description, title=title, poster=poster)
+            playlist.append(s)
+
+        return playlist        
