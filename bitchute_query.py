@@ -25,11 +25,11 @@ class ChannelEntry():
 
 class Subscription():
 
-    def __init__(self, name, channel, last_video, description_text, channel_image):
+    def __init__(self, name, channel, last_video, description, channel_image):
         self.name = name
         self.channel = channel.replace("/channel/", "")
         self.last_video = last_video
-        self.description_text = description_text
+        self.description = description
         self.channel_image = channel_image
 
 
@@ -40,7 +40,6 @@ class Notification():
         self.channel_id = video_id
         # split(vid"/video/5vnIKCCYzJIo/?list=notifications&amp;randomize=false"
         self.notification_detail = notification_detail
-        self.logged_in = False
 
 
 class PlaylistEntry():
@@ -103,15 +102,14 @@ class BitChute():
             channel = sub.find("a").attrs["href"].split("/")[1]
             channel_image = sub.find("a").find("img").attrs["data-src"]
             name = sub.find(class_="subscription-name").get_text()
-            description_text = sub.find(
-                class_="subscription-description").get_text()
+            #description = sub.find(
+            #    class_="subscription-description").get_text()
             channel = sub.find(class_="spa").attrs["href"]
             last_video = sub.find(class_="subscription-last-video").get_text()
-            description_text = sub.find(
-                class_="subscription-description-text").contents
-
+            description = sub.find(
+                class_="subscription-description-text").get_text()
             s = Subscription(name=name, channel=channel, last_video=last_video,
-                             description_text=description_text, channel_image=channel_image)
+                             description=description, channel_image=channel_image)
             subs.append(s)
 
         return subs
@@ -195,7 +193,7 @@ class BitChute():
         for n in containers:
             t = n.find(class_="text-container").find("a")
             video_id = t.attrs["href"].replace("/video/", "").split("/")[0]
-            title = n.find(class_="title").find("a").contents[0]
+            title = n.find(class_="title").find("a").get_text()
             description = n.find(class_="description hidden-xs").get_text()
             poster = n.find(
                 class_="image-container").find("img").attrs['data-src']
@@ -223,8 +221,7 @@ class BitChute():
         return (video)
 
     def get_popular(self):
-        #"favorites", "watch-later"
-
+        
         playlist = []
 
         url = "https://www.bitchute.com/"
