@@ -66,14 +66,12 @@ def watch_later():
     build_playlist("watch-later")
 
 
-""" @plugin.route('/play_folder/<item_val>')
-def play_folder(item_val):
-
+@plugin.route('/popular')
+def popular():
     if not valid_user:
         return
 
-    build_and_play(item_val)
- """
+    build_popular()
 
 
 @plugin.route('/play_now/<item_val>')
@@ -114,6 +112,8 @@ def build_main_menu():
         item_name="Favourites", item_val=None, func=favourites)
     store.menu.new_folder_item(
         item_name="Watch Later", item_val=None, func=watch_later)
+    store.menu.new_folder_item(
+        item_name="Popular", item_val=None, func=popular)
     store.menu.end_folder()
 
 
@@ -175,9 +175,24 @@ def build_playlist(playlist):
         store.menu.new_info_item("** NO VIDEOS FOUND **")
     else:
         for n in entries:
-            #store.menu.new_video_item(displayName=v.title, title="", playURL=v.videoURL, thumbURL="", duration=0)
             store.menu.new_folder_item(
                 item_name=n.title, func=play_now, item_val=n.video_id)
+
+    store.menu.end_folder()
+
+
+def build_popular():
+    global store
+    store.menu.start_folder()
+
+    entries = store.bitchute.get_popular()
+
+    if 0 == len(entries):
+        store.menu.new_info_item("** NO VIDEOS FOUND **")
+    else:
+        for n in entries:
+            store.menu.new_folder_item(
+                item_name=n.title, func=play_now, item_val=n.video_id, iconURL=n.poster)
 
     store.menu.end_folder()
 
