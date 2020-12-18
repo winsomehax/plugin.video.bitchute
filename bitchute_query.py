@@ -25,10 +25,9 @@ class ChannelEntry():
 
 class Subscription():
 
-    def __init__(self, name, channel, last_video, description, channel_image):
+    def __init__(self, name, channel, description, channel_image):
         self.name = name
         self.channel = channel.replace("/channel/", "")
-        self.last_video = last_video
         self.description = description
         self.channel_image = channel_image
 
@@ -105,10 +104,10 @@ class BitChute():
             #description = sub.find(
             #    class_="subscription-description").get_text()
             channel = sub.find(class_="spa").attrs["href"]
-            last_video = sub.find(class_="subscription-last-video").get_text()
+            #last_video = sub.find(class_="subscription-last-video").get_text()
             description = sub.find(
                 class_="subscription-description-text").get_text()
-            s = Subscription(name=name, channel=channel, last_video=last_video,
+            s = Subscription(name=name, channel=channel,
                              description=description, channel_image=channel_image)
             subs.append(s)
 
