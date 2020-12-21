@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.bitchute" name="bitchute" version="1.0.0" provider-name="winsomehax">
+<addon id="plugin.video.bitchute" name="bitchute" version="2.0.0" provider-name="winsomehax">
     <requires>
         <import addon="xbmc.python" version="2.26.0"/>
         <import addon="script.module.routing" version="0.2.0"/>
         <import addon="script.module.requests" version="2.9.1"/>
         <import addon="script.module.beautifulsoup4" />
+        <import addon="script.module.elementtree" />
+        <import addon="script.common.plugin.cache" version="2.5.9"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="main.py">
         <provides>video</provides>
