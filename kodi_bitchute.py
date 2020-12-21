@@ -115,23 +115,23 @@ def build_main_menu():
     store.menu.start_folder()
 
     store.menu.new_folder_item(
-        item_name="Set your Bitchute user", item_val=None, func=open_settings)
+        item_name="Set your Bitchute user", description="Enter your Bitchute user and password", item_val=None, func=open_settings)
     store.menu.new_folder_item(
-        item_name="Subscriptions", item_val=None, func=subscriptions)
+        item_name="Subscriptions", description="Show the Bitchute channel you are subscribed to", item_val=None, func=subscriptions)
     store.menu.new_folder_item(
-        item_name="Feed", item_val=None, func=feed)
+        item_name="Notifications", description="Show the Bitchute notifications outstanding", item_val=None, func=notifications)
     store.menu.new_folder_item(
-        item_name="Notifications", item_val=None, func=notifications)
+        item_name="Favourites", description="Videos you've added to your Bitchute playlist", item_val=None, func=favourites)
     store.menu.new_folder_item(
-        item_name="Favourites", item_val=None, func=favourites)
+        item_name="Watch Later", description="Videos you've marked as watch later on Bitchute", item_val=None, func=watch_later)
     store.menu.new_folder_item(
-        item_name="Watch Later", item_val=None, func=watch_later)
+        item_name="Popular", description="Videos listed on Bitchute's popular category", item_val=None, func=popular)
     store.menu.new_folder_item(
-        item_name="Popular", item_val=None, func=popular)
+        item_name="Trending", description="Videos listed on Bitchute's trending category", item_val=None, func=trending)
     store.menu.new_folder_item(
-        item_name="Trending", item_val=None, func=trending)
+        item_name="Feed", description="Show a feed from your subscribed channels", item_val=None, func=feed)
     store.menu.new_folder_item(
-        item_name="Open a video by ID", item_val=None, func=video_by_id)
+        item_name="Open a video by ID", description="Open a video using its Bitchite ID, e.g lfhdo1zEXm3l", item_val=None, func=video_by_id)
     store.menu.end_folder()
 
 
