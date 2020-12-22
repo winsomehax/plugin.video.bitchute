@@ -1,5 +1,5 @@
 import routing
-from xbmcgui import Dialog
+from xbmcgui import Dialog, INPUT_ALPHANUM
 import xbmcaddon
 import KODIMenu as kodi_menu
 import bitchute_access
@@ -101,6 +101,11 @@ def channel(item_val):
 def open_settings():
     build_open_settings()
 
+@plugin.route('/search')
+def search():
+    build_search()
+
+
 
 def build_main_menu():
 
@@ -111,6 +116,8 @@ def build_main_menu():
         item_name="Set your Bitchute user", description="Enter your Bitchute user and password", item_val=None, func=open_settings)
     menu.new_folder_item(
         item_name="Subscriptions", description="Show the Bitchute channel you are subscribed to", item_val=None, func=subscriptions)
+    menu.new_folder_item(
+        item_name="Search", description="Search for videos", item_val=None, func=search)
     menu.new_folder_item(
         item_name="Notifications", description="Show the Bitchute notifications outstanding", item_val=None, func=notifications)
     menu.new_folder_item(
@@ -124,7 +131,7 @@ def build_main_menu():
     menu.new_folder_item(
         item_name="Feed", description="Show a feed from your subscribed channels", item_val=None, func=feed)
     menu.new_folder_item(
-        item_name="Open a video by ID", description="Open a video using its Bitchute ID, e.g lfhdo1zEXm3l", item_val=None, func=video_by_id)
+        item_name="Open a video by Bitchute ID", description="Open a video using its Bitchute ID, e.g lfhdo1zEXm3l", item_val=None, func=video_by_id)
     menu.end_folder()
 
 
@@ -237,6 +244,27 @@ def build_trending():
         menu.new_info_item("** NO VIDEOS FOUND **")
     else:
         for n in entries:
+
+            menu.new_folder_item(
+                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"\n"+n.description, iconURL=n.poster)
+
+    menu.end_folder()
+
+
+def build_search():
+
+    dlg = Dialog()
+    d = dlg.input('Enter search', type=INPUT_ALPHANUM)
+
+    global menu
+    menu.start_folder()
+
+    results = bitchute_access.search(d)   
+
+    if 0 == len(results):
+        menu.new_info_item("** NO VIDEOS FOUND **")
+    else:
+        for n in results:
 
             menu.new_folder_item(
                 item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"\n"+n.description, iconURL=n.poster)

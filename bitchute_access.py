@@ -41,6 +41,14 @@ class Video():
         self.title = title
         self.description = description
 
+class SearchResult():
+
+    def __init__(self, video_id, description, title, poster, channel_name):
+        self.video_id = video_id
+        self.description = description
+        self.title = title
+        self.poster = poster
+        self.channel_name = channel_name
 
 class ChannelEntry():
 
@@ -356,6 +364,33 @@ def get_video(video_id):
 
     return (video)
 
+def _search(search_for):
+    cookies = bt_login()
+
+    results=[]
+
+    Referer = "https://www.bitchute.com/search/"
+
+    url="https://www.bitchute.com/api/search/list/"
+
+    token = cookies['csrftoken']
+
+    post_data = {'csrfmiddlewaretoken': token, 'query': search_for, 'kind': 'video'}
+    headers = {'Referer': Referer}
+    response = requests.post(url, data=post_data, headers=headers, cookies=cookies)
+    val=json.loads(response.text)
+
+    for result in val["results"]:
+        video_id=result["id"]
+        title=result["name"]
+        description=result["description"]
+        channel_name=result["channel_name"]
+        poster=result["images"]["thumbnail"]
+        r=SearchResult(video_id=video_id, title=title, description=description, channel_name=channel_name, poster=poster)
+
+        results.append(r)
+
+    return pickle.dumps(results)
 
 # Wrappers to ensure the subs, notifications, playlists are cached for 15 minutes
 def get_subscriptions():
@@ -391,3 +426,7 @@ def get_trending():
 def get_feed():
     global data_cache
     return pickle.loads(data_cache.cacheFunction(_get_feed))
+
+def search(search_for):
+    global data_cache
+    return pickle.loads(data_cache.cacheFunction(_search, search_for))
