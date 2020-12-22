@@ -105,6 +105,9 @@ def open_settings():
 def search():
     build_search()
 
+@plugin.route('/recently_active')
+def recently_active():
+    build_recently_active()
 
 
 def build_main_menu():
@@ -125,6 +128,8 @@ def build_main_menu():
     menu.new_folder_item(
         item_name="Watch Later", description="Videos you've marked as watch later on Bitchute", item_val=None, func=watch_later)
     menu.new_folder_item(
+        item_name="Recently active channels", description="Show recently active channels from the site", item_val=None, func=recently_active)
+    menu.new_folder_item(
         item_name="Popular", description="Videos listed on Bitchute's popular category", item_val=None, func=popular)
     menu.new_folder_item(
         item_name="Trending", description="Videos listed on Bitchute's trending category", item_val=None, func=trending)
@@ -141,6 +146,22 @@ def build_subscriptions():
     menu.start_folder()
 
     subscriptions = bitchute_access.get_subscriptions()
+
+    if 0 == len(subscriptions):
+        menu.new_info_item("** YOU HAVE NO SUBSCRIPTIONS **")
+    else:
+        for sub in subscriptions:
+            menu.new_folder_item(
+                item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image, description=sub.description)
+
+    menu.end_folder()
+
+def build_recently_active():
+
+    global menu
+    menu.start_folder()
+
+    subscriptions = bitchute_access.get_recently_active()
 
     if 0 == len(subscriptions):
         menu.new_info_item("** YOU HAVE NO SUBSCRIPTIONS **")
