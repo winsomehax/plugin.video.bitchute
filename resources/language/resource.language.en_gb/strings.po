@@ -12,10 +12,120 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgctxt "#32002"
+msgctxt "#30002"
 msgid "Bitchute user name"
 msgstr ""
 
-msgctxt "#32003"
+msgctxt "#30003"
 msgid "Bitchute password"
 msgstr ""
+
+msgctxt "#30004"
+msgid "Set your Bitchute user"
+msgstr ""
+
+msgctxt "#30005"
+msgid "Enter your Bitchute user and password"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Subscriptions"
+msgstr ""
+
+msgctxt "#30007"
+msgid "Show the Bitchute channels you are subscribed to"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Search"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Search for videos"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Notifications"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Show the Bitchute notifications outstanding"
+msgstr ""
+
+msgctxt "#30012"
+msgid "Favourites"
+msgstr ""
+
+msgctxt "#30013"
+msgid "Videos you've added to your Bitchute favourites list"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Watch Later"
+msgstr ""
+
+msgctxt "#30015"
+msgid "Videos you've marked as watch later on Bitchute"
+msgstr ""
+
+msgctxt "#30016"
+msgid "Recently active channels"
+msgstr ""
+
+msgctxt "#30017"
+msgid "Show recently active channels from the site"
+msgstr ""
+
+msgctxt "#30018"
+msgid "Popular"
+msgstr ""
+
+msgctxt "#30019"
+msgid "Videos listed on Bitchute's popular category"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Trending"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Videos listed on Bitchute's trending category"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Feed"
+msgstr ""
+
+msgctxt "#30023"
+msgid "Show a feed from your subscribed channels"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Open a video by Bitchute ID"
+msgstr ""
+
+msgctxt "#30025"
+msgid "Open a video using its Bitchute ID, e.g lfhdo1zEXm3l"
+msgstr ""
+
+msgctxt "#30026"
+msgid "*** YOU HAVE NO SUBSCRIPTIONS ***"
+msgstr ""
+
+msgctxt "#30027"
+msgid "*** YOU HAVE NO NOTIFICATIONS ***"
+msgstr ""
+
+msgctxt "#30028"
+msgid "*** NO VIDEOS FOUND ***"
+msgstr ""
+
+msgctxt "#30029"
+msgid "Enter search term"
+msgstr ""
+
+msgctxt "#30030"
+msgid "Enter the video ID"
+msgstr ""
+
+
