@@ -346,6 +346,29 @@ def _get_feed():
 
 #     return videos
 
+def _get_recently_active():
+
+    cookies = bt_login()
+
+    subs = []
+
+    url = "https://www.bitchute.com/channels/"
+
+    req = requests.get(url, cookies=cookies)
+
+    soup = BeautifulSoup(req.text, "html.parser")
+
+    containers = soup.find_all(class_="channel-card")
+
+    for n in containers:
+        channel_image=n.find("a").find("img").attrs["data-src"]
+        channel=n.find("a").attrs["href"]
+        name=n.find(class_="channel-card-title").get_text()
+        s = Subscription(name=name, channel=channel, description="", channel_image=channel_image)
+        subs.append(s)
+
+    return pickle.dumps(subs)
+
 
 def get_video(video_id):
     cookies = bt_login()
@@ -430,3 +453,7 @@ def get_feed():
 def search(search_for):
     global data_cache
     return pickle.loads(data_cache.cacheFunction(_search, search_for))
+
+def get_recently_active():
+    global data_cache
+    return pickle.loads(data_cache.cacheFunction(_get_recently_active))

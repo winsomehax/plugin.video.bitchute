@@ -1,6 +1,6 @@
 import routing
 from xbmcgui import Dialog, INPUT_ALPHANUM
-import xbmcaddon
+import xbmcaddon 
 import KODIMenu as kodi_menu
 import bitchute_access
 
@@ -66,7 +66,10 @@ def trending():
 def video_by_id():
 
     d = Dialog()
-    v = d.input("Enter the video ID")
+    v = d.input(loc(30030))
+    if v.strip()=="":
+        return
+
     play_video(v)
 
 
@@ -105,7 +108,14 @@ def open_settings():
 def search():
     build_search()
 
+@plugin.route('/recently_active')
+def recently_active():
+    build_recently_active()
 
+
+def loc(label):
+
+    return(xbmcaddon.Addon().getLocalizedString(label))
 
 def build_main_menu():
 
@@ -113,25 +123,27 @@ def build_main_menu():
     menu.start_folder()
 
     menu.new_folder_item(
-        item_name="Set your Bitchute user", description="Enter your Bitchute user and password", item_val=None, func=open_settings)
+        item_name=loc(30004), description=loc(30005), item_val=None, func=open_settings)
     menu.new_folder_item(
-        item_name="Subscriptions", description="Show the Bitchute channel you are subscribed to", item_val=None, func=subscriptions)
+        item_name=loc(30006), description=loc(30007), item_val=None, func=subscriptions)
     menu.new_folder_item(
-        item_name="Search", description="Search for videos", item_val=None, func=search)
+        item_name=loc(30008), description=loc(30009), item_val=None, func=search)
     menu.new_folder_item(
-        item_name="Notifications", description="Show the Bitchute notifications outstanding", item_val=None, func=notifications)
+        item_name=loc(30010), description=loc(30011), item_val=None, func=notifications)
     menu.new_folder_item(
-        item_name="Favourites", description="Videos you've added to your Bitchute playlist", item_val=None, func=favourites)
+        item_name=loc(30012), description=loc(30013), item_val=None, func=favourites)
     menu.new_folder_item(
-        item_name="Watch Later", description="Videos you've marked as watch later on Bitchute", item_val=None, func=watch_later)
+        item_name=loc(30014), description=loc(30015), item_val=None, func=watch_later)
     menu.new_folder_item(
-        item_name="Popular", description="Videos listed on Bitchute's popular category", item_val=None, func=popular)
+        item_name=loc(30016), description=loc(30017), item_val=None, func=recently_active)
     menu.new_folder_item(
-        item_name="Trending", description="Videos listed on Bitchute's trending category", item_val=None, func=trending)
+        item_name=loc(30018), description=loc(30019), item_val=None, func=popular)
     menu.new_folder_item(
-        item_name="Feed", description="Show a feed from your subscribed channels", item_val=None, func=feed)
+        item_name=loc(30020), description=loc(30021), item_val=None, func=trending)
     menu.new_folder_item(
-        item_name="Open a video by Bitchute ID", description="Open a video using its Bitchute ID, e.g lfhdo1zEXm3l", item_val=None, func=video_by_id)
+        item_name=loc(30022), description=loc(30023), item_val=None, func=feed)
+    menu.new_folder_item(
+        item_name=loc(30024), description=loc(30025), item_val=None, func=video_by_id)
     menu.end_folder()
 
 
@@ -143,7 +155,23 @@ def build_subscriptions():
     subscriptions = bitchute_access.get_subscriptions()
 
     if 0 == len(subscriptions):
-        menu.new_info_item("** YOU HAVE NO SUBSCRIPTIONS **")
+        menu.new_info_item(loc(30026))
+    else:
+        for sub in subscriptions:
+            menu.new_folder_item(
+                item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image, description=sub.description)
+
+    menu.end_folder()
+
+def build_recently_active():
+
+    global menu
+    menu.start_folder()
+
+    subscriptions = bitchute_access.get_recently_active()
+
+    if 0 == len(subscriptions):
+        menu.new_info_item(loc(30026))
     else:
         for sub in subscriptions:
             menu.new_folder_item(
@@ -160,7 +188,7 @@ def build_notifications():
     notifications = bitchute_access.get_notifications()
 
     if 0 == len(notifications):
-        menu.new_info_item("** YOU HAVE NO NOTIFICATIONS **")
+        menu.new_info_item(loc(30027))
     else:
         for n in notifications:
             menu.new_folder_item(item_name=n.title, description=n.description, func=play_now, item_val=n.video_id,
@@ -190,7 +218,7 @@ def build_playlist(playlist):
     entries = bitchute_access.get_playlist(playlist)
 
     if 0 == len(entries):
-        menu.new_info_item("** NO VIDEOS FOUND **")
+        menu.new_info_item(loc(30028))
     else:
         for n in entries:
             menu.new_folder_item(
@@ -207,7 +235,7 @@ def build_feed():
     entries = bitchute_access.get_feed()
 
     if 0 == len(entries):
-        menu.new_info_item("** NO VIDEOS FOUND **")
+        menu.new_info_item(loc(30028))
     else:
         for n in entries:
             menu.new_folder_item(
@@ -224,7 +252,7 @@ def build_popular():
     entries = bitchute_access.get_popular()
 
     if 0 == len(entries):
-        menu.new_info_item("** NO VIDEOS FOUND **")
+        menu.new_info_item(loc(30028))
     else:
         for n in entries:
 
@@ -241,7 +269,7 @@ def build_trending():
     entries = bitchute_access.get_trending()
 
     if 0 == len(entries):
-        menu.new_info_item("** NO VIDEOS FOUND **")
+        menu.new_info_item(loc(30028))
     else:
         for n in entries:
 
@@ -254,7 +282,9 @@ def build_trending():
 def build_search():
 
     dlg = Dialog()
-    d = dlg.input('Enter search', type=INPUT_ALPHANUM)
+    d = dlg.input(loc(30029), type=INPUT_ALPHANUM)
+    if d.strip()=="": 
+        return
 
     global menu
     menu.start_folder()
@@ -262,7 +292,7 @@ def build_search():
     results = bitchute_access.search(d)   
 
     if 0 == len(results):
-        menu.new_info_item("** NO VIDEOS FOUND **")
+        menu.new_info_item(loc(30028))
     else:
         for n in results:
 

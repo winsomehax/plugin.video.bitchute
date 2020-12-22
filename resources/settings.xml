@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-    <setting label="32002" type="text" id="user" default=""></setting>
-    <setting label="32003" type="text" option="hidden" id="password" default=""></setting>
+    <setting label="30002" type="text" id="user" default=""></setting>
+    <setting label="30003" type="text" option="hidden" id="password" default=""></setting>
 </settings>
-
