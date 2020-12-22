@@ -1,9 +1,5 @@
 import routing
-<<<<<<< HEAD
-from xbmcgui import Dialog
-=======
 from xbmcgui import Dialog, INPUT_ALPHANUM
->>>>>>> 07df12de6617544bb708f85cd94d6ea95efdc8e1
 import xbmcaddon
 import KODIMenu as kodi_menu
 import bitchute_access
@@ -150,11 +146,7 @@ def build_subscriptions():
         menu.new_info_item("** YOU HAVE NO SUBSCRIPTIONS **")
     else:
         for sub in subscriptions:
-<<<<<<< HEAD
-            store.menu.new_folder_item(
-=======
             menu.new_folder_item(
->>>>>>> 07df12de6617544bb708f85cd94d6ea95efdc8e1
                 item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image, description=sub.description)
 
     menu.end_folder()
@@ -201,16 +193,11 @@ def build_playlist(playlist):
         menu.new_info_item("** NO VIDEOS FOUND **")
     else:
         for n in entries:
-<<<<<<< HEAD
-            store.menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id, description=n.description, iconURL=n.poster)
-=======
             menu.new_folder_item(
                 item_name=n.title, func=play_now, item_val=n.video_id, description=n.description, iconURL=n.poster)
 
     menu.end_folder()
 
->>>>>>> 07df12de6617544bb708f85cd94d6ea95efdc8e1
 
 def build_feed():
 
