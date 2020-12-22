@@ -16,7 +16,7 @@ class KODIMenu():
         Player().play(play_url)
 
     def new_info_item(self, info):
-        li = ListItem(label=info, iconImage="")
+        li = ListItem(label=info)
         li.setProperty('IsPlayable', 'False')
         addDirectoryItem(self.h, "", listitem=li, isFolder=False)
 
@@ -40,11 +40,12 @@ class KODIMenu():
 
     def new_folder_item(self, item_name, item_val, func, iconURL="", description=""):
 
-        li = ListItem(label=item_name, iconImage="")
+        li = ListItem(label=item_name)
         li.setIsFolder(True)
 
         li.setProperty('IsPlayable', 'True')
-        li.setInfo('video', { 'plot': description }) # This is just so that the left hand plot shows up in Kodi
+        # This is just so that the left hand plot shows up in Kodi
+        li.setInfo('video', {'plot': description})
 
         li.setArt({'icon': iconURL, 'poster': iconURL,
                    'thumb': iconURL, 'banner': iconURL})
