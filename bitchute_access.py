@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import json
 import requests
 import xbmcaddon
+from xbmcgui import Dialog
 import pickle
 try:
     import StorageServer
@@ -248,6 +249,11 @@ def _get_playlist(playlist_name):
     containers = soup.find_all(class_="playlist-video")
 
     for n in containers:
+        if (n.find(class_="text-container")is None):
+            q=Dialog()
+            q.ok("NULL text-container for",playlist_name)
+            print ("**************************** NULL text-container for: ", playlist_name)
+
         t = n.find(class_="text-container").find("a")
         video_id = t.attrs["href"].replace("/video/", "").split("/")[0]
         title = n.find(class_="title").find("a").get_text()
@@ -278,6 +284,12 @@ def _get_channel(channel):
     containers = soup.find_all(class_="channel-videos-container")
 
     for n in containers:
+
+        if n.find(class_="channel-videos-title") is None:
+            q=Dialog()
+            q.ok("get_channel error channel-vides is NONE",channel)
+            print ("**************************** NULL channel-videos-title for: ", channel)
+
         t = n.find(class_="channel-videos-title").find("a")
         video_id = t.attrs["href"].split("/")[2]
         title = t.get_text()
