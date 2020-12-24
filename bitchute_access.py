@@ -141,7 +141,9 @@ def _get_subscriptions(cookies):
             #last_video = sub.find(class_="subscription-last-video").get_text()
             description = sub.find(
                 class_="subscription-description-text").get_text()
-        except:
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(sub))
             name=description=channel=channel_image="ERROR PARSING"
 
         s = Subscription(name=name, channel=channel,
@@ -170,7 +172,9 @@ def _get_notifications(cookies):
                 class_="notification-target").get_text()
             description = n.find(
                 class_="notification-detail").get_text()
-        except:
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
             video_id=title=description="ERROR PARSING"
 
         notif = Notification(video_id=video_id, title=title,
@@ -202,7 +206,10 @@ def _get_popular(cookies):
             title = n.find(class_="video-card-title").find("a").get_text()
             channel_name = n.find(class_="video-card-channel").find("a").get_text()
             description = ""
-        except:
+
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
             poster=video_id=title=channel_name=description="ERROR PARSING"
 
         s = PlaylistEntry(
@@ -237,7 +244,9 @@ def _get_trending(cookies):
             channel_name = n.find(
                 class_="video-result-channel").find("a").get_text()
             description = n.find(class_="video-result-text").get_text()
-        except:
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
             video_id=poster=title=channel_name=description="ERROR PARSING"
 
         s = PlaylistEntry(
@@ -271,7 +280,10 @@ def _get_playlist(cookies, playlist_name):
             description = n.find(class_="description hidden-xs").get_text()
             poster = n.find(
                 class_="image-container").find("img").attrs['data-src']
-        except:
+        
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
             video_id=title=description=poster="ERROR PARSING"
 
         s = PlaylistEntry(
@@ -306,7 +318,10 @@ def _get_channel(cookies, channel):
 
             poster = n.find(
                 class_="channel-videos-image").find("img").attrs['data-src']
-        except:
+
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
             video_id=title=description=poster="ERROR PARSING"
 
         s = ChannelEntry(video_id=video_id, description=description,
@@ -383,9 +398,16 @@ def _get_recently_active(cookies):
     containers = soup.find_all(class_="channel-card")
 
     for n in containers:
-        channel_image = n.find("a").find("img").attrs["data-src"]
-        channel = n.find("a").attrs["href"]
-        name = n.find(class_="channel-card-title").get_text()
+        try:
+            channel_image = n.find("a").find("img").attrs["data-src"]
+            channel = n.find("a").attrs["href"]
+            name = n.find(class_="channel-card-title").get_text()
+
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
+            channel_image=channel=name="ERROR PARSING"
+
         s = Subscription(name=name, channel=channel,
                          description="", channel_image=channel_image)
         subs.append(s)
@@ -400,9 +422,16 @@ def _get_video(cookies, video_id):
 
     soup = BeautifulSoup(req.text, "html.parser")
 
-    videoURL = soup.find("source").attrs["src"]
-    poster = soup.find("video").attrs["poster"]
-    title = soup.find(id="video-title").contents[0]
+    try:
+        videoURL = soup.find("source").attrs["src"]
+        poster = soup.find("video").attrs["poster"]
+        title = soup.find(id="video-title").contents[0]
+
+    except AttributeError as e:
+        print("**************** ATTRIBUTE_ERROR "+str(e))
+        print (video_id)
+        videoURL=poster=title="ERROR PARSING"
+
 
     video = Video(videoURL=videoURL, poster=poster,
                   title=title, description="")
