@@ -1,10 +1,12 @@
-from bs4 import BeautifulSoup
 import json
+import pickle
+
 import requests
 import xbmcaddon
+from bs4 import BeautifulSoup
 from xbmcgui import Dialog
-import pickle
-from cache import login_cache, data_cache
+
+from cache import data_cache, login_cache
 
 
 class Subscription():
@@ -102,7 +104,7 @@ def bt_login():
     global login_cache
     username = xbmcaddon.Addon().getSetting("user")
     password = xbmcaddon.Addon().getSetting("password")
-    cookies, success = login_cache.cacheFunction(
+    pickled_cookies, success = login_cache.cacheFunction(
         BitchuteLogin, username, password)
 
     if not success:
@@ -114,7 +116,9 @@ def bt_login():
 
         return [], False
 
-    return pickle.loads(cookies), True
+    cookies=pickle.loads(pickled_cookies)
+    #expires = next(x for x in cookies if x.name == 'sessionid').expires
+    return cookies, True
 
 
 def _get_subscriptions(cookies):
@@ -144,7 +148,7 @@ def _get_subscriptions(cookies):
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(sub))
-            name=description=channel=channel_image="ERROR PARSING"
+            name = description = channel = channel_image = "ERROR PARSING"
 
         s = Subscription(name=name, channel=channel,
                          description=description, channel_image=channel_image)
@@ -175,7 +179,7 @@ def _get_notifications(cookies):
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            video_id=title=description="ERROR PARSING"
+            video_id = title = description = "ERROR PARSING"
 
         notif = Notification(video_id=video_id, title=title,
                              description=description)
@@ -204,13 +208,14 @@ def _get_popular(cookies):
             poster = n.find("img").attrs["data-src"]
             video_id = n.find(class_="video-card-id hidden").get_text()
             title = n.find(class_="video-card-title").find("a").get_text()
-            channel_name = n.find(class_="video-card-channel").find("a").get_text()
+            channel_name = n.find(
+                class_="video-card-channel").find("a").get_text()
             description = ""
 
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            poster=video_id=title=channel_name=description="ERROR PARSING"
+            poster = video_id = title = channel_name = description = "ERROR PARSING"
 
         s = PlaylistEntry(
             video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name)
@@ -247,7 +252,7 @@ def _get_trending(cookies):
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            video_id=poster=title=channel_name=description="ERROR PARSING"
+            video_id = poster = title = channel_name = description = "ERROR PARSING"
 
         s = PlaylistEntry(
             video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name)
@@ -273,18 +278,18 @@ def _get_playlist(cookies, playlist_name):
     for n in containers:
 
         try:
-            
+
             t = n.find(class_="text-container").find("a")
             video_id = t.attrs["href"].replace("/video/", "").split("/")[0]
             title = n.find(class_="title").find("a").get_text()
             description = n.find(class_="description hidden-xs").get_text()
             poster = n.find(
                 class_="image-container").find("img").attrs['data-src']
-        
+
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            video_id=title=description=poster="ERROR PARSING"
+            video_id = title = description = poster = "ERROR PARSING"
 
         s = PlaylistEntry(
             video_id=video_id, description=description, title=title, poster=poster)
@@ -302,9 +307,13 @@ def _get_channel(cookies, channel):
 
     soup = BeautifulSoup(req.text, "html.parser")
 
-    channel_name = soup.find(
-        class_="channel-banner").find(class_="name").find("a").get_text()
-    containers = soup.find_all(class_="channel-videos-container")
+    try:
+        channel_name = soup.find(
+            class_="channel-banner").find(class_="name").find("a").get_text()
+        containers = soup.find_all(class_="channel-videos-container")
+    except AttributeError as e:
+        containers = []                   # the looping with skip later
+        channel_name = "ERROR PARSING"
 
     for n in containers:
 
@@ -322,7 +331,7 @@ def _get_channel(cookies, channel):
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            video_id=title=description=poster="ERROR PARSING"
+            video_id = title = description = poster = "ERROR PARSING"
 
         s = ChannelEntry(video_id=video_id, description=description,
                          title=title, poster=poster, channel_name=channel_name)
@@ -406,7 +415,7 @@ def _get_recently_active(cookies):
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            channel_image=channel=name="ERROR PARSING"
+            channel_image = channel = name = "ERROR PARSING"
 
         s = Subscription(name=name, channel=channel,
                          description="", channel_image=channel_image)
@@ -429,9 +438,8 @@ def _get_video(cookies, video_id):
 
     except AttributeError as e:
         print("**************** ATTRIBUTE_ERROR "+str(e))
-        print (video_id)
-        videoURL=poster=title="ERROR PARSING"
-
+        print(video_id)
+        videoURL = poster = title = "ERROR PARSING"
 
     video = Video(videoURL=videoURL, poster=poster,
                   title=title, description="")
