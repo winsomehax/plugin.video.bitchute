@@ -312,6 +312,8 @@ def _get_channel(cookies, channel):
             class_="channel-banner").find(class_="name").find("a").get_text()
         containers = soup.find_all(class_="channel-videos-container")
     except AttributeError as e:
+        print("**************** ATTRIBUTE_ERROR "+str(e))
+        print("****************: ", channel)
         containers = []                   # the looping with skip later
         channel_name = "ERROR PARSING"
 
