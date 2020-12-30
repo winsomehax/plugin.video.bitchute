@@ -1,18 +1,12 @@
-from bs4 import BeautifulSoup
 import json
+import pickle
+
 import requests
 import xbmcaddon
-import pickle
-try:
-    import StorageServer
-except:
-    import storageserverdummy as StorageServer
+from bs4 import BeautifulSoup
+from xbmcgui import Dialog
 
-# add version to name so if there is a version bump it avoid cache issues
-login_cache = StorageServer.StorageServer(
-    "bitchute_logindetails"+xbmcaddon.Addon().getAddonInfo('version'), 24)  # refresh login per day (24hrs)
-data_cache = StorageServer.StorageServer(
-    "bitchute_data"+xbmcaddon.Addon().getAddonInfo('version'), 0.25)  # reloads subs per 15m
+from cache import data_cache, login_cache
 
 
 class Subscription():
@@ -41,6 +35,7 @@ class Video():
         self.title = title
         self.description = description
 
+
 class SearchResult():
 
     def __init__(self, video_id, description, title, poster, channel_name):
@@ -49,6 +44,7 @@ class SearchResult():
         self.title = title
         self.poster = poster
         self.channel_name = channel_name
+
 
 class ChannelEntry():
 
@@ -70,10 +66,10 @@ class PlaylistEntry():
         self.channel_name = channel_name
 
 
-def BitchuteLogin():
-    username = xbmcaddon.Addon().getSetting("user")
-    password = xbmcaddon.Addon().getSetting("password")
+def BitchuteLogin(username, password):
+
     token = ""
+    logged_in = False
 
     url = "https://www.bitchute.com/accounts/login/"
     req = requests.get(url)
@@ -98,20 +94,34 @@ def BitchuteLogin():
         if 200 == response.status_code:
             if json.loads(response.text)['success'] == True:
                 csrfJar = response.cookies
+                logged_in = True
 
     # the cookies object has to be pickled or Kodi's cache will never recognise it as cache and keep refreshing it
-    return pickle.dumps(csrfJar)
+    return pickle.dumps(csrfJar), logged_in
 
 
 def bt_login():
     global login_cache
-    cookies = login_cache.cacheFunction(BitchuteLogin)
-    return pickle.loads(cookies)
+    username = xbmcaddon.Addon().getSetting("user")
+    password = xbmcaddon.Addon().getSetting("password")
+    pickled_cookies, success = login_cache.cacheFunction(
+        BitchuteLogin, username, password)
+
+    if not success:
+
+        login_cache.delete('%')
+        data_cache.delete('%')   # clear out the login/data caches
+        q = Dialog()
+        q.ok("Login failed", "Unable to login to Bitchute with the details provided")
+
+        return [], False
+
+    cookies=pickle.loads(pickled_cookies)
+    #expires = next(x for x in cookies if x.name == 'sessionid').expires
+    return cookies, True
 
 
-def _get_subscriptions():
-
-    cookies = bt_login()
+def _get_subscriptions(cookies):
 
     url = "https://www.bitchute.com/subscriptions/"
     req = requests.get(url, cookies=cookies)
@@ -124,15 +134,22 @@ def _get_subscriptions():
     containers = soup.find_all(class_="subscription-container")
 
     for sub in containers:
-        channel = sub.find("a").attrs["href"].split("/")[1]
-        channel_image = sub.find("a").find("img").attrs["data-src"]
-        name = sub.find(class_="subscription-name").get_text()
-        # description = sub.find(
-        #    class_="subscription-description").get_text()
-        channel = sub.find(class_="spa").attrs["href"]
-        #last_video = sub.find(class_="subscription-last-video").get_text()
-        description = sub.find(
-            class_="subscription-description-text").get_text()
+
+        try:
+            channel = sub.find("a").attrs["href"].split("/")[1]
+            channel_image = sub.find("a").find("img").attrs["data-src"]
+            name = sub.find(class_="subscription-name").get_text()
+            # description = sub.find(
+            #    class_="subscription-description").get_text()
+            channel = sub.find(class_="spa").attrs["href"]
+            #last_video = sub.find(class_="subscription-last-video").get_text()
+            description = sub.find(
+                class_="subscription-description-text").get_text()
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(sub))
+            name = description = channel = channel_image = "ERROR PARSING"
+
         s = Subscription(name=name, channel=channel,
                          description=description, channel_image=channel_image)
         subs.append(s)
@@ -140,9 +157,8 @@ def _get_subscriptions():
     return pickle.dumps(subs)
 
 
-def _get_notifications():
+def _get_notifications(cookies):
 
-    cookies = bt_login()
     notifs = []
 
     url = "https://www.bitchute.com/notifications/"
@@ -153,12 +169,17 @@ def _get_notifications():
     containers = soup.find_all(class_="notification-item")
 
     for n in containers:
-        video_id = n.find(
-            class_="notification-view").attrs["href"].split("/")[2]
-        title = n.find(
-            class_="notification-target").get_text()
-        description = n.find(
-            class_="notification-detail").get_text()
+        try:
+            video_id = n.find(
+                class_="notification-view").attrs["href"].split("/")[2]
+            title = n.find(
+                class_="notification-target").get_text()
+            description = n.find(
+                class_="notification-detail").get_text()
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
+            video_id = title = description = "ERROR PARSING"
 
         notif = Notification(video_id=video_id, title=title,
                              description=description)
@@ -167,9 +188,7 @@ def _get_notifications():
     return pickle.dumps(notifs)
 
 
-def _get_popular():
-
-    cookies = bt_login()
+def _get_popular(cookies):
 
     playlist = []
 
@@ -185,11 +204,18 @@ def _get_popular():
     containers = popular.find_all(class_="video-card")
 
     for n in containers:
-        poster = n.find("img").attrs["data-src"]
-        video_id = n.find(class_="video-card-id hidden").get_text()
-        title = n.find(class_="video-card-title").find("a").get_text()
-        channel_name = n.find(class_="video-card-channel").find("a").get_text()
-        description = ""
+        try:
+            poster = n.find("img").attrs["data-src"]
+            video_id = n.find(class_="video-card-id hidden").get_text()
+            title = n.find(class_="video-card-title").find("a").get_text()
+            channel_name = n.find(
+                class_="video-card-channel").find("a").get_text()
+            description = ""
+
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
+            poster = video_id = title = channel_name = description = "ERROR PARSING"
 
         s = PlaylistEntry(
             video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name)
@@ -198,9 +224,7 @@ def _get_popular():
     return pickle.dumps(playlist)
 
 
-def _get_trending():
-
-    cookies = bt_login()
+def _get_trending(cookies):
 
     playlist = []
 
@@ -216,14 +240,19 @@ def _get_trending():
     containers = popular.find_all(class_="video-result-container")
 
     for n in containers:
-        video_id = n.find(class_="video-result-image-container").find(
-            "a").attrs["href"].split("/")[2].replace("/", "")
-        poster = n.find(
-            class_="video-result-image").find("img").attrs["data-src"]
-        title = n.find(class_="video-result-title").find("a").get_text()
-        channel_name = n.find(
-            class_="video-result-channel").find("a").get_text()
-        description = n.find(class_="video-result-text").get_text()
+        try:
+            video_id = n.find(class_="video-result-image-container").find(
+                "a").attrs["href"].split("/")[2].replace("/", "")
+            poster = n.find(
+                class_="video-result-image").find("img").attrs["data-src"]
+            title = n.find(class_="video-result-title").find("a").get_text()
+            channel_name = n.find(
+                class_="video-result-channel").find("a").get_text()
+            description = n.find(class_="video-result-text").get_text()
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
+            video_id = poster = title = channel_name = description = "ERROR PARSING"
 
         s = PlaylistEntry(
             video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name)
@@ -232,10 +261,9 @@ def _get_trending():
     return pickle.dumps(playlist)
 
 
-def _get_playlist(playlist_name):
+def _get_playlist(cookies, playlist_name):
 
     #"favorites", "watch-later"
-    cookies = bt_login()
 
     playlist = []
 
@@ -248,12 +276,20 @@ def _get_playlist(playlist_name):
     containers = soup.find_all(class_="playlist-video")
 
     for n in containers:
-        t = n.find(class_="text-container").find("a")
-        video_id = t.attrs["href"].replace("/video/", "").split("/")[0]
-        title = n.find(class_="title").find("a").get_text()
-        description = n.find(class_="description hidden-xs").get_text()
-        poster = n.find(
-            class_="image-container").find("img").attrs['data-src']
+
+        try:
+
+            t = n.find(class_="text-container").find("a")
+            video_id = t.attrs["href"].replace("/video/", "").split("/")[0]
+            title = n.find(class_="title").find("a").get_text()
+            description = n.find(class_="description hidden-xs").get_text()
+            poster = n.find(
+                class_="image-container").find("img").attrs['data-src']
+
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
+            video_id = title = description = poster = "ERROR PARSING"
 
         s = PlaylistEntry(
             video_id=video_id, description=description, title=title, poster=poster)
@@ -262,9 +298,7 @@ def _get_playlist(playlist_name):
     return pickle.dumps(playlist)
 
 
-def _get_channel(channel):
-
-    cookies = bt_login()
+def _get_channel(cookies, channel):
 
     videos = []
 
@@ -273,19 +307,34 @@ def _get_channel(channel):
 
     soup = BeautifulSoup(req.text, "html.parser")
 
-    channel_name = soup.find(
-        class_="channel-banner").find(class_="name").find("a").get_text()
-    containers = soup.find_all(class_="channel-videos-container")
+    try:
+        channel_name = soup.find(
+            class_="channel-banner").find(class_="name").find("a").get_text()
+        containers = soup.find_all(class_="channel-videos-container")
+    except AttributeError as e:
+        print("**************** ATTRIBUTE_ERROR "+str(e))
+        print("****************: ", channel)
+        containers = []                   # the looping with skip later
+        channel_name = "ERROR PARSING"
 
     for n in containers:
-        t = n.find(class_="channel-videos-title").find("a")
-        video_id = t.attrs["href"].split("/")[2]
-        title = t.get_text()
 
-        description = n.find(class_="channel-videos-text").get_text()
+        try:
 
-        poster = n.find(
-            class_="channel-videos-image").find("img").attrs['data-src']
+            t = n.find(class_="channel-videos-title").find("a")
+            video_id = t.attrs["href"].split("/")[2]
+            title = t.get_text()
+
+            description = n.find(class_="channel-videos-text").get_text()
+
+            poster = n.find(
+                class_="channel-videos-image").find("img").attrs['data-src']
+
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
+            video_id = title = description = poster = "ERROR PARSING"
+
         s = ChannelEntry(video_id=video_id, description=description,
                          title=title, poster=poster, channel_name=channel_name)
         videos.append(s)
@@ -293,7 +342,7 @@ def _get_channel(channel):
     return pickle.dumps(videos)
 
 
-def _get_feed():
+def _get_feed(cookies):
 
     subs = get_subscriptions()
 
@@ -346,9 +395,8 @@ def _get_feed():
 
 #     return videos
 
-def _get_recently_active():
 
-    cookies = bt_login()
+def _get_recently_active(cookies):
 
     subs = []
 
@@ -361,99 +409,164 @@ def _get_recently_active():
     containers = soup.find_all(class_="channel-card")
 
     for n in containers:
-        channel_image=n.find("a").find("img").attrs["data-src"]
-        channel=n.find("a").attrs["href"]
-        name=n.find(class_="channel-card-title").get_text()
-        s = Subscription(name=name, channel=channel, description="", channel_image=channel_image)
+        try:
+            channel_image = n.find("a").find("img").attrs["data-src"]
+            channel = n.find("a").attrs["href"]
+            name = n.find(class_="channel-card-title").get_text()
+
+        except AttributeError as e:
+            print("**************** ATTRIBUTE_ERROR "+str(e))
+            print(str(n))
+            channel_image = channel = name = "ERROR PARSING"
+
+        s = Subscription(name=name, channel=channel,
+                         description="", channel_image=channel_image)
         subs.append(s)
 
     return pickle.dumps(subs)
 
 
-def get_video(video_id):
-    cookies = bt_login()
+def _get_video(cookies, video_id):
 
     url = "https://www.bitchute.com/video/"+video_id
     req = requests.get(url, cookies=cookies)
 
     soup = BeautifulSoup(req.text, "html.parser")
 
-    videoURL = soup.find("source").attrs["src"]
-    poster = soup.find("video").attrs["poster"]
-    title = soup.find(id="video-title").contents[0]
+    try:
+        videoURL = soup.find("source").attrs["src"]
+        poster = soup.find("video").attrs["poster"]
+        title = soup.find(id="video-title").contents[0]
+
+    except AttributeError as e:
+        print("**************** ATTRIBUTE_ERROR "+str(e))
+        print(video_id)
+        videoURL = poster = title = "ERROR PARSING"
 
     video = Video(videoURL=videoURL, poster=poster,
                   title=title, description="")
 
-    return (video)
+    return (pickle.dumps(video))
 
-def _search(search_for):
-    cookies = bt_login()
 
-    results=[]
+def _search(cookies, search_for):
+
+    results = []
 
     Referer = "https://www.bitchute.com/search/"
 
-    url="https://www.bitchute.com/api/search/list/"
+    url = "https://www.bitchute.com/api/search/list/"
 
     token = cookies['csrftoken']
 
-    post_data = {'csrfmiddlewaretoken': token, 'query': search_for, 'kind': 'video'}
+    post_data = {'csrfmiddlewaretoken': token,
+                 'query': search_for, 'kind': 'video'}
     headers = {'Referer': Referer}
-    response = requests.post(url, data=post_data, headers=headers, cookies=cookies)
-    val=json.loads(response.text)
+    response = requests.post(
+        url, data=post_data, headers=headers, cookies=cookies)
+    val = json.loads(response.text)
 
     for result in val["results"]:
-        video_id=result["id"]
-        title=result["name"]
-        description=result["description"]
-        channel_name=result["channel_name"]
-        poster=result["images"]["thumbnail"]
-        r=SearchResult(video_id=video_id, title=title, description=description, channel_name=channel_name, poster=poster)
+        video_id = result["id"]
+        title = result["name"]
+        description = result["description"]
+        channel_name = result["channel_name"]
+        poster = result["images"]["thumbnail"]
+        r = SearchResult(video_id=video_id, title=title,
+                         description=description, channel_name=channel_name, poster=poster)
 
         results.append(r)
 
     return pickle.dumps(results)
 
 # Wrappers to ensure the subs, notifications, playlists are cached for 15 minutes
+
+
 def get_subscriptions():
     global data_cache
-    return pickle.loads(data_cache.cacheFunction(_get_subscriptions))
+    cookies, success = bt_login()
+    if success:
+        return pickle.loads(data_cache.cacheFunction(_get_subscriptions, cookies))
+
+    return []
 
 
 def get_notifications():
     global data_cache
-    return pickle.loads(data_cache.cacheFunction(_get_notifications))
+    cookies, success = bt_login()
+    if success:
+        return pickle.loads(data_cache.cacheFunction(_get_notifications, cookies))
+
+    return []
 
 
 def get_playlist(playlist):
     global data_cache
-    return pickle.loads(data_cache.cacheFunction(_get_playlist, playlist))
+    cookies, success = bt_login()
+    if success:
+        return pickle.loads(data_cache.cacheFunction(_get_playlist, cookies, playlist))
+
+    return []
 
 
 def get_channel(channel):
     global data_cache
-    return pickle.loads(data_cache.cacheFunction(_get_channel, channel))
+    cookies, success = bt_login()
+    if success:
+        return pickle.loads(data_cache.cacheFunction(_get_channel, cookies, channel))
+
+    return []
 
 
 def get_popular():
     global data_cache
-    return pickle.loads(data_cache.cacheFunction(_get_popular))
+    cookies, success = bt_login()
+    if success:
+        return pickle.loads(data_cache.cacheFunction(_get_popular, cookies))
+
+    return []
 
 
 def get_trending():
     global data_cache
-    return pickle.loads(data_cache.cacheFunction(_get_trending))
+    cookies, success = bt_login()
+    if success:
+        return pickle.loads(data_cache.cacheFunction(_get_trending, cookies))
+
+    return []
 
 
 def get_feed():
     global data_cache
-    return pickle.loads(data_cache.cacheFunction(_get_feed))
+    cookies, success = bt_login()
+    if success:
+        return pickle.loads(data_cache.cacheFunction(_get_feed, cookies))
+
+    return []
+
 
 def search(search_for):
     global data_cache
-    return pickle.loads(data_cache.cacheFunction(_search, search_for))
+    cookies, success = bt_login()
+    if success:
+        return pickle.loads(data_cache.cacheFunction(_search, cookies, search_for))
+
+    return []
+
 
 def get_recently_active():
     global data_cache
-    return pickle.loads(data_cache.cacheFunction(_get_recently_active))
+    cookies, success = bt_login()
+    if success:
+        return pickle.loads(data_cache.cacheFunction(_get_recently_active, cookies))
+
+    return []
+
+
+def get_video(video_id):
+    global data_cache
+    cookies, success = bt_login()
+    if success:
+        return pickle.loads(data_cache.cacheFunction(_get_video, cookies, video_id))
+
+    return []
