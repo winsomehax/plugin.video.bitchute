@@ -1,15 +1,12 @@
 import routing
 from xbmcgui import Dialog, INPUT_ALPHANUM
-import xbmcaddon 
+import xbmcaddon
 import KODIMenu as kodi_menu
 import bitchute_access
 
 plugin = routing.Plugin()
 
 menu = kodi_menu.KODIMenu(plugin)
-
-def valid_user():
-    return True # temp until I figure out some better error handling
 
 
 @plugin.route('/')
@@ -20,32 +17,23 @@ def index():
 @plugin.route('/subscriptions')
 def subscriptions():
 
-    if not valid_user():
-        return
-
     build_subscriptions()
 
 
 @plugin.route('/notifications')
 def notifications():
-    if not valid_user():
-        return
 
     build_notifications()
 
 
 @plugin.route('/favourites')
 def favourites():
-    if not valid_user():
-        return
 
     build_playlist("favorites")  # NOTE: US spelling. yuck.
 
 
 @plugin.route('/watch-later')
 def watch_later():
-    if not valid_user():
-        return
 
     build_playlist("watch-later")
 
@@ -67,7 +55,7 @@ def video_by_id():
 
     d = Dialog()
     v = d.input(loc(30030))
-    if v.strip()=="":
+    if v.strip() == "":
         return
 
     play_video(v)
@@ -76,26 +64,17 @@ def video_by_id():
 @plugin.route('/play_now/<item_val>')
 def play_now(item_val):
 
-    if not valid_user():
-        return
-
     play_video(item_val)
 
 
 @plugin.route('/feed/')
 def feed():
 
-    if not valid_user():
-        return
-
     build_feed()
 
 
 @plugin.route('/channel/<item_val>')
 def channel(item_val):
-
-    if not valid_user():
-        return
 
     build_a_channel(item_val)
 
@@ -104,9 +83,11 @@ def channel(item_val):
 def open_settings():
     build_open_settings()
 
+
 @plugin.route('/search')
 def search():
     build_search()
+
 
 @plugin.route('/recently_active')
 def recently_active():
@@ -116,6 +97,7 @@ def recently_active():
 def loc(label):
 
     return(xbmcaddon.Addon().getLocalizedString(label))
+
 
 def build_main_menu():
 
@@ -163,6 +145,7 @@ def build_subscriptions():
 
     menu.end_folder()
 
+
 def build_recently_active():
 
     global menu
@@ -192,7 +175,7 @@ def build_notifications():
     else:
         for n in notifications:
             menu.new_folder_item(item_name=n.title, description=n.description, func=play_now, item_val=n.video_id,
-                                       iconURL="https://www.bitchute.com/static/v129/images/logo-full-day.png")
+                                 iconURL="https://www.bitchute.com/static/v129/images/logo-full-day.png")
 
     menu.end_folder()
 
@@ -283,13 +266,13 @@ def build_search():
 
     dlg = Dialog()
     d = dlg.input(loc(30029), type=INPUT_ALPHANUM)
-    if d.strip()=="": 
+    if d.strip() == "":
         return
 
     global menu
     menu.start_folder()
 
-    results = bitchute_access.search(d)   
+    results = bitchute_access.search(d)
 
     if 0 == len(results):
         menu.new_info_item(loc(30028))
@@ -311,5 +294,4 @@ def play_video(video_id):
 
 def build_open_settings():
     xbmcaddon.Addon().openSettings()
-
-
+    bitchute_access.bt_login()
