@@ -297,25 +297,62 @@ def _get_playlist(cookies, playlist_name):
 
     return pickle.dumps(playlist)
 
-
-def _get_channel(cookies, channel):
-
+""" def _get_channel(cookies, channel):
     videos = []
 
-    url = "https://www.bitchute.com/channel/"+channel
-    req = requests.get(url, cookies=cookies)
+    url = "https://www.bitchute.com/feeds/rss/channel/"+channel
+    req = requests.get(url)
 
-    soup = BeautifulSoup(req.text, "html.parser")
+    s=req.text.encode('utf8', 'replace') # Python and unicode = shit
+
+    dom = xml.dom.minidom.parseString(s)
+
+    channel_name="xx"#dom.getElementsByTagName("channel").getElementsByTagName("title")
+
+    items = dom.getElementsByTagName("item")
+    for item in items:
+        title=item.getElementsByTagName('title')[0].childNodes[0].nodeValue
+        #print(item.getElementsByTagName('link')[0].childNodes[0].nodeValue)
+        description=item.getElementsByTagName('description')[0].childNodes[0].nodeValue
+        #print(item.getElementsByTagName('pubDate')[0].childNodes[0].nodeValue)
+        video_id=item.getElementsByTagName('guid')[0].childNodes[0].nodeValue
+        poster=item.getElementsByTagName('enclosure')[0].attributes['url'].childNodes[0].nodeValue
+
+        s = ChannelEntry(video_id=video_id, description=description,
+                         title=title, poster=poster, channel_name=channel_name)
+        videos.append(s)
+
+    return pickle.dumps(videos) """
+
+def _get_channel(channel, page, cookies):
+    offset=page*25
+    
+    videos = []
+
+    Referer = "https://www.bitchute.com/channel/"
+
+    url = "https://www.bitchute.com/channel/"+channel+"/extend/"
+
+    token = cookies['csrftoken']
+
+    post_data = {'csrfmiddlewaretoken': token,
+                 'offset': offset}
+    headers = {'Referer': Referer}
+    response = requests.post(
+        url, data=post_data, headers=headers, cookies=cookies)
+    
+    req=json.loads(response.text)
+
+    soup = BeautifulSoup(req["html"], "html.parser")
 
     try:
-        channel_name = soup.find(
-            class_="channel-banner").find(class_="name").find("a").get_text()
         containers = soup.find_all(class_="channel-videos-container")
     except AttributeError as e:
         print("**************** ATTRIBUTE_ERROR "+str(e))
         print("****************: ", channel)
-        containers = []                   # the looping with skip later
-        channel_name = "ERROR PARSING"
+        containers = []                   # the looping will skip later
+        #channel_name = "ERROR PARSING"
+
 
     for n in containers:
 
@@ -336,7 +373,7 @@ def _get_channel(cookies, channel):
             video_id = title = description = poster = "ERROR PARSING"
 
         s = ChannelEntry(video_id=video_id, description=description,
-                         title=title, poster=poster, channel_name=channel_name)
+                         title=title, poster=poster, channel_name="")
         videos.append(s)
 
     return pickle.dumps(videos)
@@ -509,11 +546,11 @@ def get_playlist(playlist):
     return []
 
 
-def get_channel(channel):
+def get_channel(channel, page):
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_channel, cookies, channel))
+        return pickle.loads(data_cache.cacheFunction(_get_channel, channel, page, cookies))
 
     return []
 
