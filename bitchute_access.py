@@ -386,7 +386,7 @@ def _get_feed(cookies):
     feed = []
     for sub in subs:
 
-        channel = get_channel(sub.channel)
+        channel = get_channel(sub.channel,0)
         vid = channel[0]  # The latest video
         feed_item = PlaylistEntry(video_id=vid.video_id, description=vid.description,
                                   title=vid.title, poster=vid.poster, channel_name=vid.channel_name)
