@@ -507,7 +507,7 @@ def _get_video(cookies, video_id):
     try:
         videoURL = soup.find("source").attrs["src"]
         poster = soup.find("video").attrs["poster"]
-        title = soup.find(id="video-title").contents[0]
+        title = str(soup.find(id="video-title").contents[0])
 
     except AttributeError as e:
         print("**************** ATTRIBUTE_ERROR "+str(e))
@@ -636,6 +636,7 @@ def get_recently_active():
 
 def get_video(video_id):
     global data_cache
+    print("555555555555555555555555555: ", video_id)
     cookies, success = bt_login()
     if success:
         return pickle.loads(data_cache.cacheFunction(_get_video, cookies, video_id))

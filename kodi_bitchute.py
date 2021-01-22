@@ -299,6 +299,7 @@ def build_search():
 def play_video(video_id):
 
     global menu
+
     v = bitchute_access.get_video(video_id)
     menu.play_now(v.videoURL)
 

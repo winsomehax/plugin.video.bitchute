@@ -11,3 +11,8 @@ login_cache = StorageServer.StorageServer(
     "bitchute_logindetails"+xbmcaddon.Addon().getAddonInfo('version'), 24)  # refresh login per day (24hrs)
 data_cache = StorageServer.StorageServer(
     "bitchute_data"+xbmcaddon.Addon().getAddonInfo('version'), 0.25)  # reloads subs per 15m
+
+def clear_out():
+    global login_cache, data_cache
+    login_cache.delete("%")
+    data_cache.delete("%")
