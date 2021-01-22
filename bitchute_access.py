@@ -5,6 +5,8 @@ import requests
 import xbmcaddon
 from bs4 import BeautifulSoup
 from xbmcgui import Dialog
+#import re
+#from datetime import datetime
 
 from cache import data_cache, login_cache
 
@@ -48,12 +50,14 @@ class SearchResult():
 
 class ChannelEntry():
 
-    def __init__(self, video_id, poster, title, description, channel_name=""):
+    def __init__(self, video_id, poster, title, description, channel_name="", date=0, duration=0):
         self.video_id = video_id
         self.poster = poster
         self.title = title
         self.description = description
         self.channel_name = channel_name
+        self.date=date
+        self.duration=duration
 
 
 class PlaylistEntry():
@@ -64,6 +68,31 @@ class PlaylistEntry():
         self.title = title
         self.poster = poster
         self.channel_name = channel_name
+
+""" 
+def conv_bitcoin_date(bt_datestr):
+    print ("000000000000000000000000000000: ", bt_datestr)
+    conv = {"JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6, "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12}
+    reg = "([A-Za-z]+)\ ([0-9]{1,})\,\ ([0-9]{4})"
+
+    r = re.match(reg, bt_datestr)
+    print (
+        "100000000000000000000000000000: ",conv[(r.group(1).upper())],
+        int(r.group(2)),
+        int(r.group(3))
+        )
+
+    if r is not None:
+        d = datetime(
+            month=conv[(r.group(1).upper())],
+            day=int(r.group(2)),
+            year=int(r.group(3))
+            )
+    else:
+        d=0
+
+    return (d) """
+
 
 
 def BitchuteLogin(username, password):
@@ -297,25 +326,64 @@ def _get_playlist(cookies, playlist_name):
 
     return pickle.dumps(playlist)
 
-
-def _get_channel(cookies, channel):
-
+""" def _get_channel(cookies, channel):
     videos = []
 
-    url = "https://www.bitchute.com/channel/"+channel
-    req = requests.get(url, cookies=cookies)
+    url = "https://www.bitchute.com/feeds/rss/channel/"+channel
+    req = requests.get(url)
 
-    soup = BeautifulSoup(req.text, "html.parser")
+    s=req.text.encode('utf8', 'replace') # Python and unicode = shit
+
+    dom = xml.dom.minidom.parseString(s)
+
+    channel_name="xx"#dom.getElementsByTagName("channel").getElementsByTagName("title")
+
+    items = dom.getElementsByTagName("item")
+    for item in items:
+        title=item.getElementsByTagName('title')[0].childNodes[0].nodeValue
+        #print(item.getElementsByTagName('link')[0].childNodes[0].nodeValue)
+        description=item.getElementsByTagName('description')[0].childNodes[0].nodeValue
+        #print(item.getElementsByTagName('pubDate')[0].childNodes[0].nodeValue)
+        video_id=item.getElementsByTagName('guid')[0].childNodes[0].nodeValue
+        poster=item.getElementsByTagName('enclosure')[0].attributes['url'].childNodes[0].nodeValue
+
+        s = ChannelEntry(video_id=video_id, description=description,
+                         title=title, poster=poster, channel_name=channel_name)
+        videos.append(s)
+
+    return pickle.dumps(videos) """
+
+def _get_channel(channel, page, cookies):
+    offset=page*25
+    
+    videos = []
+
+    Referer = "https://www.bitchute.com/channel/"
+
+    url = "https://www.bitchute.com/channel/"+channel+"/extend/"
+
+    token = cookies['csrftoken']
+
+    post_data = {'csrfmiddlewaretoken': token,
+                 'offset': offset}
+    headers = {'Referer': Referer}
+    response = requests.post(
+        url, data=post_data, headers=headers, cookies=cookies)
+    
+    req=json.loads(response.text)
+
+    soup = BeautifulSoup(req["html"], "html.parser")
 
     try:
-        channel_name = soup.find(
-            class_="channel-banner").find(class_="name").find("a").get_text()
         containers = soup.find_all(class_="channel-videos-container")
     except AttributeError as e:
         print("**************** ATTRIBUTE_ERROR "+str(e))
         print("****************: ", channel)
-        containers = []                   # the looping with skip later
-        channel_name = "ERROR PARSING"
+        containers = []                   # the looping will skip later
+        #channel_name = "ERROR PARSING"
+
+    duration=""
+    date=""
 
     for n in containers:
 
@@ -324,6 +392,9 @@ def _get_channel(cookies, channel):
             t = n.find(class_="channel-videos-title").find("a")
             video_id = t.attrs["href"].split("/")[2]
             title = t.get_text()
+
+            date=n.find(class_="channel-videos-details").find("span").get_text()
+            duration=n.find(class_="video-duration").get_text()
 
             description = n.find(class_="channel-videos-text").get_text()
 
@@ -336,7 +407,7 @@ def _get_channel(cookies, channel):
             video_id = title = description = poster = "ERROR PARSING"
 
         s = ChannelEntry(video_id=video_id, description=description,
-                         title=title, poster=poster, channel_name=channel_name)
+                         title=title, poster=poster, channel_name="", date=date, duration=duration)
         videos.append(s)
 
     return pickle.dumps(videos)
@@ -349,7 +420,7 @@ def _get_feed(cookies):
     feed = []
     for sub in subs:
 
-        channel = get_channel(sub.channel)
+        channel = get_channel(sub.channel,0)
         vid = channel[0]  # The latest video
         feed_item = PlaylistEntry(video_id=vid.video_id, description=vid.description,
                                   title=vid.title, poster=vid.poster, channel_name=vid.channel_name)
@@ -509,11 +580,11 @@ def get_playlist(playlist):
     return []
 
 
-def get_channel(channel):
+def get_channel(channel, page):
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_channel, cookies, channel))
+        return pickle.loads(data_cache.cacheFunction(_get_channel, channel, page, cookies))
 
     return []
 
