@@ -5,6 +5,8 @@ import requests
 import xbmcaddon
 from bs4 import BeautifulSoup
 from xbmcgui import Dialog
+#import re
+#from datetime import datetime
 
 from cache import data_cache, login_cache
 
@@ -48,12 +50,14 @@ class SearchResult():
 
 class ChannelEntry():
 
-    def __init__(self, video_id, poster, title, description, channel_name=""):
+    def __init__(self, video_id, poster, title, description, channel_name="", date=0, duration=0):
         self.video_id = video_id
         self.poster = poster
         self.title = title
         self.description = description
         self.channel_name = channel_name
+        self.date=date
+        self.duration=duration
 
 
 class PlaylistEntry():
@@ -64,6 +68,31 @@ class PlaylistEntry():
         self.title = title
         self.poster = poster
         self.channel_name = channel_name
+
+""" 
+def conv_bitcoin_date(bt_datestr):
+    print ("000000000000000000000000000000: ", bt_datestr)
+    conv = {"JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6, "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12}
+    reg = "([A-Za-z]+)\ ([0-9]{1,})\,\ ([0-9]{4})"
+
+    r = re.match(reg, bt_datestr)
+    print (
+        "100000000000000000000000000000: ",conv[(r.group(1).upper())],
+        int(r.group(2)),
+        int(r.group(3))
+        )
+
+    if r is not None:
+        d = datetime(
+            month=conv[(r.group(1).upper())],
+            day=int(r.group(2)),
+            year=int(r.group(3))
+            )
+    else:
+        d=0
+
+    return (d) """
+
 
 
 def BitchuteLogin(username, password):
@@ -353,6 +382,8 @@ def _get_channel(channel, page, cookies):
         containers = []                   # the looping will skip later
         #channel_name = "ERROR PARSING"
 
+    duration=""
+    date=""
 
     for n in containers:
 
@@ -361,6 +392,9 @@ def _get_channel(channel, page, cookies):
             t = n.find(class_="channel-videos-title").find("a")
             video_id = t.attrs["href"].split("/")[2]
             title = t.get_text()
+
+            date=n.find(class_="channel-videos-details").find("span").get_text()
+            duration=n.find(class_="video-duration").get_text()
 
             description = n.find(class_="channel-videos-text").get_text()
 
@@ -373,7 +407,7 @@ def _get_channel(channel, page, cookies):
             video_id = title = description = poster = "ERROR PARSING"
 
         s = ChannelEntry(video_id=video_id, description=description,
-                         title=title, poster=poster, channel_name="")
+                         title=title, poster=poster, channel_name="", date=date, duration=duration)
         videos.append(s)
 
     return pickle.dumps(videos)

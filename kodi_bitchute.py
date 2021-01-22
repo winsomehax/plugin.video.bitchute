@@ -196,7 +196,7 @@ def build_a_channel(item_val, page):
 
     for v in videos:
         menu.new_folder_item(
-            item_name=v.title, func=play_now, item_val=v.video_id, description=v.channel_name+"\n"+v.description, iconURL=v.poster)
+            item_name=v.title, func=play_now, item_val=v.video_id, description=v.channel_name+"\nDate: "+str(v.date)+"\nDuration: "+str(v.duration)+"\n"+v.description, iconURL=v.poster, label2=str(v.date))
 
     if len(videos)==25:
         menu.new_folder_item2(item_name="<<<< Next page >>>>", func=channel_offset, item_val=item_val, item_val2=(page+1), description="Next page", iconURL=None)
