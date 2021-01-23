@@ -15,7 +15,7 @@ class Subscription():
 
     def __init__(self, name, channel, description, channel_image):
         self.name = name
-        self.channel = channel.replace("/channel/", "")
+        self.channel = channel
         self.description = description
         self.channel_image = channel_image
 
@@ -170,7 +170,7 @@ def _get_subscriptions(cookies):
             name = sub.find(class_="subscription-name").get_text()
             # description = sub.find(
             #    class_="subscription-description").get_text()
-            channel = sub.find(class_="spa").attrs["href"]
+            channel = sub.find(class_="spa").attrs["href"].replace("/channel/", "")
             #last_video = sub.find(class_="subscription-last-video").get_text()
             description = sub.find(
                 class_="subscription-description-text").get_text()
@@ -482,7 +482,7 @@ def _get_recently_active(cookies):
     for n in containers:
         try:
             channel_image = n.find("a").find("img").attrs["data-src"]
-            channel = n.find("a").attrs["href"]
+            channel = n.find("a").attrs["href"].replace("/channel/", "")
             name = n.find(class_="channel-card-title").get_text()
 
         except AttributeError as e:
@@ -507,7 +507,7 @@ def _get_video(cookies, video_id):
     try:
         videoURL = soup.find("source").attrs["src"]
         poster = soup.find("video").attrs["poster"]
-        title = soup.find(id="video-title").contents[0]
+        title = str(soup.find(id="video-title").contents[0])
 
     except AttributeError as e:
         print("**************** ATTRIBUTE_ERROR "+str(e))
