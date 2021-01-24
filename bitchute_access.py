@@ -5,6 +5,7 @@ import requests
 import xbmcaddon
 from bs4 import BeautifulSoup
 from xbmcgui import Dialog
+
 #import re
 #from datetime import datetime
 
@@ -15,7 +16,7 @@ class Subscription():
 
     def __init__(self, name, channel, description, channel_image):
         self.name = name
-        self.channel = channel.replace("/channel/", "")
+        self.channel = channel
         self.description = description
         self.channel_image = channel_image
 
@@ -50,7 +51,7 @@ class SearchResult():
 
 class ChannelEntry():
 
-    def __init__(self, video_id, poster, title, description, channel_name="", date=0, duration=0):
+    def __init__(self, video_id, poster, title, description, channel_name=u"", date=0, duration=0):
         self.video_id = video_id
         self.poster = poster
         self.title = title
@@ -62,12 +63,15 @@ class ChannelEntry():
 
 class PlaylistEntry():
 
-    def __init__(self, video_id, description, title, poster, channel_name=""):
-        self.video_id = video_id
-        self.description = description
-        self.title = title
-        self.poster = poster
-        self.channel_name = channel_name
+    def __init__(self, video_id, description, title, poster, channel_name=u"", duration=u"", date=u""):
+        self.video_id = video_id #.replace('&nbsp', ' ')
+        self.description = description #.replace('&nbsp', ' ')
+        self.title = title #.replace('&nbsp', ' ')
+        self.poster = poster #.replace('&nbsp', ' ')
+        self.channel_name = channel_name #.replace('&nbsp', ' ')
+        self.duration=duration #.replace('&nbsp', ' ')
+        self.date=date #.replace('&nbsp', ' ')
+        print("Playlist entry: ",video_id, description, title, poster, channel_name, duration, date)
 
 """ 
 def conv_bitcoin_date(bt_datestr):
@@ -170,7 +174,7 @@ def _get_subscriptions(cookies):
             name = sub.find(class_="subscription-name").get_text()
             # description = sub.find(
             #    class_="subscription-description").get_text()
-            channel = sub.find(class_="spa").attrs["href"]
+            channel = sub.find(class_="spa").attrs["href"].replace("/channel/", "")
             #last_video = sub.find(class_="subscription-last-video").get_text()
             description = sub.find(
                 class_="subscription-description-text").get_text()
@@ -241,13 +245,17 @@ def _get_popular(cookies):
                 class_="video-card-channel").find("a").get_text()
             description = ""
 
+            duration = n.find(class_="video-duration").get_text()
+            date= n.find(class_="video-card-published").get_text()
+            print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: ", duration, date)
+
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            poster = video_id = title = channel_name = description = "ERROR PARSING"
+            poster = video_id = title = channel_name = description = duration = date = "ERROR PARSING"
 
         s = PlaylistEntry(
-            video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name)
+            video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name, date=date, duration=duration)
         playlist.append(s)
 
     return pickle.dumps(playlist)
@@ -278,13 +286,17 @@ def _get_trending(cookies):
             channel_name = n.find(
                 class_="video-result-channel").find("a").get_text()
             description = n.find(class_="video-result-text").get_text()
+
+            duration = n.find(class_="video-duration").get_text()
+            date= n.find(class_="video-result-details").find("span").get_text()
+
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            video_id = poster = title = channel_name = description = "ERROR PARSING"
+            video_id = poster = title = channel_name = description =date= duration= "ERROR PARSING"
 
         s = PlaylistEntry(
-            video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name)
+            video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name, date=date, duration=duration)
         playlist.append(s)
 
     return pickle.dumps(playlist)
@@ -314,14 +326,16 @@ def _get_playlist(cookies, playlist_name):
             description = n.find(class_="description hidden-xs").get_text()
             poster = n.find(
                 class_="image-container").find("img").attrs['data-src']
+            duration = n.find(class_="video-duration").get_text()
+            date= n.find(class_="details").find("span").get_text()
 
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            video_id = title = description = poster = "ERROR PARSING"
+            video_id = title = description = poster = duration = date = "ERROR PARSING"
 
         s = PlaylistEntry(
-            video_id=video_id, description=description, title=title, poster=poster)
+            video_id=video_id, description=description, title=title, poster=poster, duration=duration, date=date)
         playlist.append(s)
 
     return pickle.dumps(playlist)
@@ -423,7 +437,7 @@ def _get_feed(cookies):
         channel = get_channel(sub.channel,0)
         vid = channel[0]  # The latest video
         feed_item = PlaylistEntry(video_id=vid.video_id, description=vid.description,
-                                  title=vid.title, poster=vid.poster, channel_name=vid.channel_name)
+                                  title=vid.title, poster=vid.poster, channel_name=vid.channel_name, date=vid.date, duration=vid.duration)
         feed.append(feed_item)
 
     return pickle.dumps(feed)
@@ -482,7 +496,7 @@ def _get_recently_active(cookies):
     for n in containers:
         try:
             channel_image = n.find("a").find("img").attrs["data-src"]
-            channel = n.find("a").attrs["href"]
+            channel = n.find("a").attrs["href"].replace("/channel/", "")
             name = n.find(class_="channel-card-title").get_text()
 
         except AttributeError as e:

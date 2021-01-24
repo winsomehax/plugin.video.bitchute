@@ -196,7 +196,7 @@ def build_a_channel(item_val, page):
 
     for v in videos:
         menu.new_folder_item(
-            item_name=v.title, func=play_now, item_val=v.video_id, description=v.channel_name+"\nDate: "+str(v.date)+"\nDuration: "+str(v.duration)+"\n"+v.description, iconURL=v.poster, label2=str(v.date))
+            item_name=v.title, func=play_now, item_val=v.video_id, description=v.channel_name+"\nDate: "+v.date+"\nDuration: "+v.duration+"\n"+v.description, iconURL=v.poster, label2=v.date)
 
     if len(videos)==25:
         menu.new_folder_item2(item_name="<<<< Next page >>>>", func=channel_offset, item_val=item_val, item_val2=(page+1), description="Next page", iconURL=None)
@@ -216,7 +216,7 @@ def build_playlist(playlist):
     else:
         for n in entries:
             menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id, description=n.description, iconURL=n.poster)
+                item_name=n.title, func=play_now, item_val=n.video_id, description="Date: "+n.date+"\nDuration: "+n.duration+"\n"+n.description, iconURL=n.poster)
 
     menu.end_folder()
 
@@ -233,7 +233,7 @@ def build_feed():
     else:
         for n in entries:
             menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"\n"+n.description, iconURL=n.poster)
+                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"Date: "+n.date+"\nDuration: "+n.duration+"\n"+n.description, iconURL=n.poster)
 
     menu.end_folder()
 
@@ -251,7 +251,7 @@ def build_popular():
         for n in entries:
 
             menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"\n"+n.description, iconURL=n.poster)
+                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"\n"+"Date: "+n.date+"\nDuration: "+n.duration+"\n"+n.description, iconURL=n.poster)
 
     menu.end_folder()
 
@@ -268,7 +268,7 @@ def build_trending():
         for n in entries:
 
             menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"\n"+n.description, iconURL=n.poster)
+                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"\n"+"Date: "+n.date+"\nDuration: "+n.duration+"\n"+n.description, iconURL=n.poster)
 
     menu.end_folder()
 
