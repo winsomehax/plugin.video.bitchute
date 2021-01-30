@@ -6,6 +6,9 @@ import xbmcaddon
 from bs4 import BeautifulSoup
 from xbmcgui import Dialog
 
+#import re
+#from datetime import datetime
+
 from cache import data_cache, login_cache
 
 
@@ -13,7 +16,7 @@ class Subscription():
 
     def __init__(self, name, channel, description, channel_image):
         self.name = name
-        self.channel = channel.replace("/channel/", "")
+        self.channel = channel
         self.description = description
         self.channel_image = channel_image
 
@@ -48,22 +51,52 @@ class SearchResult():
 
 class ChannelEntry():
 
-    def __init__(self, video_id, poster, title, description, channel_name=""):
+    def __init__(self, video_id, poster, title, description, channel_name=u"", date=0, duration=0):
         self.video_id = video_id
         self.poster = poster
         self.title = title
         self.description = description
         self.channel_name = channel_name
+        self.date=date
+        self.duration=duration
 
 
 class PlaylistEntry():
 
-    def __init__(self, video_id, description, title, poster, channel_name=""):
-        self.video_id = video_id
-        self.description = description
-        self.title = title
-        self.poster = poster
-        self.channel_name = channel_name
+    def __init__(self, video_id, description, title, poster, channel_name=u"", duration=u"", date=u""):
+        self.video_id = video_id #.replace('&nbsp', ' ')
+        self.description = description #.replace('&nbsp', ' ')
+        self.title = title #.replace('&nbsp', ' ')
+        self.poster = poster #.replace('&nbsp', ' ')
+        self.channel_name = channel_name #.replace('&nbsp', ' ')
+        self.duration=duration #.replace('&nbsp', ' ')
+        self.date=date #.replace('&nbsp', ' ')
+        print("Playlist entry: ",video_id, description, title, poster, channel_name, duration, date)
+
+""" 
+def conv_bitcoin_date(bt_datestr):
+    print ("000000000000000000000000000000: ", bt_datestr)
+    conv = {"JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6, "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12}
+    reg = "([A-Za-z]+)\ ([0-9]{1,})\,\ ([0-9]{4})"
+
+    r = re.match(reg, bt_datestr)
+    print (
+        "100000000000000000000000000000: ",conv[(r.group(1).upper())],
+        int(r.group(2)),
+        int(r.group(3))
+        )
+
+    if r is not None:
+        d = datetime(
+            month=conv[(r.group(1).upper())],
+            day=int(r.group(2)),
+            year=int(r.group(3))
+            )
+    else:
+        d=0
+
+    return (d) """
+
 
 
 def BitchuteLogin(username, password):
@@ -141,7 +174,7 @@ def _get_subscriptions(cookies):
             name = sub.find(class_="subscription-name").get_text()
             # description = sub.find(
             #    class_="subscription-description").get_text()
-            channel = sub.find(class_="spa").attrs["href"]
+            channel = sub.find(class_="spa").attrs["href"].replace("/channel/", "")
             #last_video = sub.find(class_="subscription-last-video").get_text()
             description = sub.find(
                 class_="subscription-description-text").get_text()
@@ -212,13 +245,17 @@ def _get_popular(cookies):
                 class_="video-card-channel").find("a").get_text()
             description = ""
 
+            duration = n.find(class_="video-duration").get_text()
+            date= n.find(class_="video-card-published").get_text()
+            print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: ", duration, date)
+
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            poster = video_id = title = channel_name = description = "ERROR PARSING"
+            poster = video_id = title = channel_name = description = duration = date = "ERROR PARSING"
 
         s = PlaylistEntry(
-            video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name)
+            video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name, date=date, duration=duration)
         playlist.append(s)
 
     return pickle.dumps(playlist)
@@ -249,13 +286,17 @@ def _get_trending(cookies):
             channel_name = n.find(
                 class_="video-result-channel").find("a").get_text()
             description = n.find(class_="video-result-text").get_text()
+
+            duration = n.find(class_="video-duration").get_text()
+            date= n.find(class_="video-result-details").find("span").get_text()
+
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            video_id = poster = title = channel_name = description = "ERROR PARSING"
+            video_id = poster = title = channel_name = description =date= duration= "ERROR PARSING"
 
         s = PlaylistEntry(
-            video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name)
+            video_id=video_id, description=description, title=title, poster=poster, channel_name=channel_name, date=date, duration=duration)
         playlist.append(s)
 
     return pickle.dumps(playlist)
@@ -285,37 +326,78 @@ def _get_playlist(cookies, playlist_name):
             description = n.find(class_="description hidden-xs").get_text()
             poster = n.find(
                 class_="image-container").find("img").attrs['data-src']
+            duration = n.find(class_="video-duration").get_text()
+            date= n.find(class_="details").find("span").get_text()
 
         except AttributeError as e:
             print("**************** ATTRIBUTE_ERROR "+str(e))
             print(str(n))
-            video_id = title = description = poster = "ERROR PARSING"
+            video_id = title = description = poster = duration = date = "ERROR PARSING"
 
         s = PlaylistEntry(
-            video_id=video_id, description=description, title=title, poster=poster)
+            video_id=video_id, description=description, title=title, poster=poster, duration=duration, date=date)
         playlist.append(s)
 
     return pickle.dumps(playlist)
 
-
-def _get_channel(cookies, channel):
-
+""" def _get_channel(cookies, channel):
     videos = []
 
-    url = "https://www.bitchute.com/channel/"+channel
-    req = requests.get(url, cookies=cookies)
+    url = "https://www.bitchute.com/feeds/rss/channel/"+channel
+    req = requests.get(url)
 
-    soup = BeautifulSoup(req.text, "html.parser")
+    s=req.text.encode('utf8', 'replace') # Python and unicode = shit
+
+    dom = xml.dom.minidom.parseString(s)
+
+    channel_name="xx"#dom.getElementsByTagName("channel").getElementsByTagName("title")
+
+    items = dom.getElementsByTagName("item")
+    for item in items:
+        title=item.getElementsByTagName('title')[0].childNodes[0].nodeValue
+        #print(item.getElementsByTagName('link')[0].childNodes[0].nodeValue)
+        description=item.getElementsByTagName('description')[0].childNodes[0].nodeValue
+        #print(item.getElementsByTagName('pubDate')[0].childNodes[0].nodeValue)
+        video_id=item.getElementsByTagName('guid')[0].childNodes[0].nodeValue
+        poster=item.getElementsByTagName('enclosure')[0].attributes['url'].childNodes[0].nodeValue
+
+        s = ChannelEntry(video_id=video_id, description=description,
+                         title=title, poster=poster, channel_name=channel_name)
+        videos.append(s)
+
+    return pickle.dumps(videos) """
+
+def _get_channel(channel, page, cookies):
+    offset=page*25
+    
+    videos = []
+
+    Referer = "https://www.bitchute.com/channel/"
+
+    url = "https://www.bitchute.com/channel/"+channel+"/extend/"
+
+    token = cookies['csrftoken']
+
+    post_data = {'csrfmiddlewaretoken': token,
+                 'offset': offset}
+    headers = {'Referer': Referer}
+    response = requests.post(
+        url, data=post_data, headers=headers, cookies=cookies)
+    
+    req=json.loads(response.text)
+
+    soup = BeautifulSoup(req["html"], "html.parser")
 
     try:
-        channel_name = soup.find(
-            class_="channel-banner").find(class_="name").find("a").get_text()
         containers = soup.find_all(class_="channel-videos-container")
     except AttributeError as e:
         print("**************** ATTRIBUTE_ERROR "+str(e))
         print("****************: ", channel)
-        containers = []                   # the looping with skip later
-        channel_name = "ERROR PARSING"
+        containers = []                   # the looping will skip later
+        #channel_name = "ERROR PARSING"
+
+    duration=""
+    date=""
 
     for n in containers:
 
@@ -324,6 +406,9 @@ def _get_channel(cookies, channel):
             t = n.find(class_="channel-videos-title").find("a")
             video_id = t.attrs["href"].split("/")[2]
             title = t.get_text()
+
+            date=n.find(class_="channel-videos-details").find("span").get_text()
+            duration=n.find(class_="video-duration").get_text()
 
             description = n.find(class_="channel-videos-text").get_text()
 
@@ -336,7 +421,7 @@ def _get_channel(cookies, channel):
             video_id = title = description = poster = "ERROR PARSING"
 
         s = ChannelEntry(video_id=video_id, description=description,
-                         title=title, poster=poster, channel_name=channel_name)
+                         title=title, poster=poster, channel_name="", date=date, duration=duration)
         videos.append(s)
 
     return pickle.dumps(videos)
@@ -349,10 +434,10 @@ def _get_feed(cookies):
     feed = []
     for sub in subs:
 
-        channel = get_channel(sub.channel)
+        channel = get_channel(sub.channel,0)
         vid = channel[0]  # The latest video
         feed_item = PlaylistEntry(video_id=vid.video_id, description=vid.description,
-                                  title=vid.title, poster=vid.poster, channel_name=vid.channel_name)
+                                  title=vid.title, poster=vid.poster, channel_name=vid.channel_name, date=vid.date, duration=vid.duration)
         feed.append(feed_item)
 
     return pickle.dumps(feed)
@@ -411,7 +496,7 @@ def _get_recently_active(cookies):
     for n in containers:
         try:
             channel_image = n.find("a").find("img").attrs["data-src"]
-            channel = n.find("a").attrs["href"]
+            channel = n.find("a").attrs["href"].replace("/channel/", "")
             name = n.find(class_="channel-card-title").get_text()
 
         except AttributeError as e:
@@ -436,7 +521,7 @@ def _get_video(cookies, video_id):
     try:
         videoURL = soup.find("source").attrs["src"]
         poster = soup.find("video").attrs["poster"]
-        title = soup.find(id="video-title").contents[0]
+        title = str(soup.find(id="video-title").contents[0])
 
     except AttributeError as e:
         print("**************** ATTRIBUTE_ERROR "+str(e))
@@ -509,11 +594,11 @@ def get_playlist(playlist):
     return []
 
 
-def get_channel(channel):
+def get_channel(channel, page):
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_channel, cookies, channel))
+        return pickle.loads(data_cache.cacheFunction(_get_channel, channel, page, cookies))
 
     return []
 
