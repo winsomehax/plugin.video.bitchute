@@ -20,11 +20,16 @@ The plugin has to rely on scraping using the Beautiful Soup 4 library because th
 the documentation is... feel free to let me know in the github issues. If there is a proper authentication mechanism (OAUTH2 for example) then it could remove
 the need to store user_ids and password in KODI settings and making working with the site much easier and more reliable.
 
-Certain options such as "Popular" and "Trending" function without login details as they are 'scraped' from the front page. I'm hoping to allow users 
-to explore the site using KODI (without the need to have a login), but it's a matter of how to translate that into KODI's awkward interface 
-and its code.
-
 Please note: I don't care if you have a problem with Bitchute and its stance on free speech. That's your choice. Use something else instead.
+
+## Installation
+KODI repos like fusion often scrape old development version with bugs and then never update them. The current master branch here is tested and works.
+
+If you are having problems with a repo version you can install a local version yourself:
+
+Download the zip file from here and install it yourself. Code tab -> Green Code button -> Download zip. Then use the "Install from zip file" in the KODI addons menu.
+
+You may need to have unknown sources set in KODI settings. Settings -> System -> Addons -> Unknown sources.
 
 ## Disclaimer
 
