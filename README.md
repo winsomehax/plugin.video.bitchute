@@ -1,6 +1,6 @@
 # plugin.video.bitchute
 
-## NOTE: If you are a KODI 19 user (the big Python 3 break), check out the KODI 19 branch. It has a small fix to addon.xml and works on v19 - testing appreciated
+## NOTE: This add-on is now KODI 19 in the master branch. The KODI-pre19 branch contains a version that works for earlier versions, but that branch will no longer be worked on.
 
 Welcome to my Bitchute addon for KODI
 
