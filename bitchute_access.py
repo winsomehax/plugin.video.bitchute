@@ -650,7 +650,9 @@ def get_recently_active():
 
 def get_video(video_id):
     global data_cache
-    cookies, success = bt_login()
+    cookies = []
+    success = True
+    #cookies, success = bt_login()
     if success:
         return pickle.loads(data_cache.cacheFunction(_get_video, cookies, video_id))
 
