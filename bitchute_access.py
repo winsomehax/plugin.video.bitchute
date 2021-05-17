@@ -99,10 +99,10 @@ def conv_bitcoin_date(bt_datestr):
 
 
 
-def BitchuteLogin(username: str, password: str):
+def BitchuteLogin(username, password):
 
-    token:str  = ""
-    logged_in: bool = False
+    token  = ""
+    logged_in = False
     agent="Bitchute Kodi-Addon/1"
 
     url: str = "https://www.bitchute.com/accounts/login/"
