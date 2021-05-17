@@ -105,7 +105,7 @@ def BitchuteLogin(username, password):
     logged_in = False
     agent="Bitchute Kodi-Addon/1"
 
-    url: str = "https://www.bitchute.com/accounts/login/"
+    url = "https://www.bitchute.com/accounts/login/"
     headers = {"User-Agent": agent}
     req = requests.get(url, headers=headers)
 
