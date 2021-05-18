@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.bitchute" name="bitchute" version="2.2.0" provider-name="winsomehax">
     <requires>
-        <import addon="xbmc.python" version="3.0.0"/>
+        <import addon="xbmc.python" version="2.56.0"/>
         <import addon="script.module.routing" version="0.2.0"/>
         <import addon="script.module.requests" version="2.9.1"/>
         <import addon="script.module.beautifulsoup4" />
