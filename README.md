@@ -1,6 +1,6 @@
 # plugin.video.bitchute
 
-## NOTE: This add-on is now KODI 19 in the master branch. The KODI-pre19 branch contains a version that works for earlier versions, but that branch will no longer be worked on.
+## NOTE: This add-on is now targets KODI 19. There is a "KODI-LEIA" branch which, barring any changes by BitChute, should work for the moment. 
 
 Welcome to my Bitchute addon for KODI
 
