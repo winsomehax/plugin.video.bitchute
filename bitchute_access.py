@@ -73,7 +73,7 @@ class PlaylistEntry():
         self.date=date #.replace('&nbsp', ' ')
         print("Playlist entry: ",video_id, description, title, poster, channel_name, duration, date)
 
-""" 
+"""
 def conv_bitcoin_date(bt_datestr):
     print ("000000000000000000000000000000: ", bt_datestr)
     conv = {"JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6, "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12}
@@ -368,7 +368,7 @@ def _get_playlist(cookies, playlist_name):
 
 def _get_channel(channel, page, cookies):
     offset=page*25
-    
+
     videos = []
 
     Referer = "https://www.bitchute.com/channel/"
@@ -382,7 +382,7 @@ def _get_channel(channel, page, cookies):
     headers = {'Referer': Referer, "User-Agent": "Bitchute Kodi-Addon/1"}
     response = requests.post(
         url, data=post_data, headers=headers, cookies=cookies)
-    
+
     req=json.loads(response.text)
 
     soup = BeautifulSoup(req["html"], "html.parser")
@@ -406,10 +406,10 @@ def _get_channel(channel, page, cookies):
             video_id = t.attrs["href"].split("/")[2]
             title = t.get_text()
 
-            date=n.find(class_="channel-videos-details").find("span").get_text()
+            date=n.find(class_="channel-videos-details").find("p").get_text()
             duration=n.find(class_="video-duration").get_text()
 
-            description = n.find(class_="channel-videos-text").get_text()
+            description = n.find(class_="channel-videos-text").find("p").get_text()
 
             poster = n.find(
                 class_="channel-videos-image").find("img").attrs['data-src']
