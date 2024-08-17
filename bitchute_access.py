@@ -105,7 +105,7 @@ def BitchuteLogin(username, password):
     logged_in = False
     agent="Bitchute Kodi-Addon/1"
 
-    url = "https://www.bitchute.com/accounts/login/"
+    url = "https://old.bitchute.com/accounts/login/"
     headers = {"User-Agent": agent}
     req = requests.get(url, headers=headers)
 
@@ -115,7 +115,7 @@ def BitchuteLogin(username, password):
     token = req.cookies["csrftoken"]
     csrfJar=req.cookies
 
-    baseURL = "https://www.bitchute.com"
+    baseURL = "https://old.bitchute.com"
     post_data = {'csrfmiddlewaretoken': token,
                     'username': username, 'password': password}
     headers = {'Referer': baseURL + "/", 'Origin': baseURL, "User-Agent": agent}
@@ -155,7 +155,7 @@ def bt_login():
 
 def _get_subscriptions(cookies):
 
-    url = "https://www.bitchute.com/subscriptions/"
+    url = "https://old.bitchute.com/subscriptions/"
     req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
 
     #self.csrfJar = req.cookies
@@ -193,7 +193,7 @@ def _get_notifications(cookies):
 
     notifs = []
 
-    url = "https://www.bitchute.com/notifications/"
+    url = "https://old.bitchute.com/notifications/"
     req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
 
     soup = BeautifulSoup(req.text, "html.parser")
@@ -224,7 +224,7 @@ def _get_popular(cookies):
 
     playlist = []
 
-    url = "https://www.bitchute.com/"
+    url = "https://old.bitchute.com/"
 
     req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
     cookies = req.cookies
@@ -264,7 +264,7 @@ def _get_trending(cookies):
 
     playlist = []
 
-    url = "https://www.bitchute.com/"
+    url = "https://old.bitchute.com/"
 
     req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
     cookies = req.cookies
@@ -307,7 +307,7 @@ def _get_playlist(cookies, playlist_name):
 
     playlist = []
 
-    url = "https://www.bitchute.com/playlist/"+playlist_name+"/"
+    url = "https://old.bitchute.com/playlist/"+playlist_name+"/"
 
     req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
 
@@ -342,7 +342,7 @@ def _get_playlist(cookies, playlist_name):
 """ def _get_channel(cookies, channel):
     videos = []
 
-    url = "https://www.bitchute.com/feeds/rss/channel/"+channel
+    url = "https://old.bitchute.com/feeds/rss/channel/"+channel
     req = requests.get(url)
 
     s=req.text.encode('utf8', 'replace') # Python and unicode = shit
@@ -371,9 +371,9 @@ def _get_channel(channel, page, cookies):
 
     videos = []
 
-    Referer = "https://www.bitchute.com/channel/"
+    Referer = "https://old.bitchute.com/channel/"
 
-    url = "https://www.bitchute.com/channel/"+channel+"/extend/"
+    url = "https://old.bitchute.com/channel/"+channel+"/extend/"
 
     token = cookies['csrftoken']
 
@@ -454,7 +454,7 @@ def _get_feed(cookies):
 
 #     videos = []
 
-#     url = "https://www.bitchute.com/feeds/rss/channel/"+channel
+#     url = "https://old.bitchute.com/feeds/rss/channel/"+channel
 #     req = requests.get(url)
 
 #     s=req.text.encode('utf8', 'replace')   # python2 is crap with unicode. it gets an exception without this
@@ -462,7 +462,7 @@ def _get_feed(cookies):
 
 #     items=root.find('channel').findall('item')
 
-#     # channel_id=soup.find(id_="canonical").attrs["href"].replace("https://www.bitchute.com/channel/","").strip("/")
+#     # channel_id=soup.find(id_="canonical").attrs["href"].replace("https://old.bitchute.com/channel/","").strip("/")
 #     channel_id = ""
 
 #     for child in items:
@@ -484,7 +484,7 @@ def _get_recently_active(cookies):
 
     subs = []
 
-    url = "https://www.bitchute.com/channels/"
+    url = "https://old.bitchute.com/channels/"
 
     req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
 
@@ -512,7 +512,7 @@ def _get_recently_active(cookies):
 
 def _get_video(cookies, video_id):
 
-    url = "https://www.bitchute.com/video/"+video_id
+    url = "https://old.bitchute.com/video/"+video_id
     req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
 
     soup = BeautifulSoup(req.text, "html.parser")
@@ -537,9 +537,9 @@ def _search(cookies, search_for):
 
     results = []
 
-    Referer = "https://www.bitchute.com/search/"
+    Referer = "https://old.bitchute.com/search/"
 
-    url = "https://www.bitchute.com/api/search/list/"
+    url = "https://old.bitchute.com/api/search/list/"
 
     token = cookies['csrftoken']
 
