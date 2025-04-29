@@ -1,5 +1,6 @@
 # plugin.video.bitchute
 
+## I am based in the UK and Bitchute has block UK users from accessing the site due to the ridiculous policies of the UK government. So any further work on this add on is not possible. Anyone is more than welcome to continue the development. Thanks.
 ## NOTE: This add-on now targets KODI 19+. 
 ## There is also a "KODI-LEIA" branch which, barring any changes by BitChute, should work for the moment. 
 
