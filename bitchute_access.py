@@ -5,6 +5,7 @@ import requests
 import xbmcaddon
 from bs4 import BeautifulSoup
 from xbmcgui import Dialog
+import xbmc
 
 #import re
 #from datetime import datetime
@@ -511,24 +512,30 @@ def _get_recently_active(cookies):
 
 
 def _get_video(cookies, video_id):
-
-    url = "https://old.bitchute.com/video/"+video_id
+    url = f'https://old.bitchute.com/api/beta9/embed/{video_id}/'
     req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
 
-    soup = BeautifulSoup(req.text, "html.parser")
+    # BeautifulSoup can't process JS but the video values are embedded
+    # in the embedded video viewer script JS.
+    def extract_js_variable(var_name, term_symbol):
+        sstr = 'var ' + var_name + ' = '
+        off = req.text.find(sstr)
+        soff = req.text.find(term_symbol, off)
+        while req.text[soff-1] == '\\':
+            soff = req.text.find(term_symbol, soff+1)
+        eoff = req.text.find(term_symbol, soff+1)
+        while req.text[eoff-1] == '\\':
+            eoff = req.text.find(term_symbol, eoff+1)
+        return req.text[soff+1:eoff].replace('\\','')
 
-    try:
-        videoURL = soup.find("source").attrs["src"]
-        poster = soup.find("video").attrs["poster"]
-        title = str(soup.find(id="video-title").contents[0])
+    video_name = extract_js_variable("video_name", "\"")
+    thumbnail_url = extract_js_variable("thumbnail_url", "'")
+    media_url = extract_js_variable("media_url", "'")
 
-    except AttributeError as e:
-        print("**************** ATTRIBUTE_ERROR "+str(e))
-        print(video_id)
-        videoURL = poster = title = "ERROR PARSING"
+    xbmc.log("Playing video -- Title: " + video_name + " Thumbnail URL: " + thumbnail_url + " Media URL: " + media_url)
 
-    video = Video(videoURL=videoURL, poster=poster,
-                  title=title, description="")
+    video = Video(videoURL=media_url, poster=thumbnail_url,
+                  title=video_name, description="")
 
     return (pickle.dumps(video))
 
