@@ -1,6 +1,8 @@
 # plugin.video.bitchute
 
-## NOTE: This add-on is now KODI 19 in the master branch. The KODI-pre19 branch contains a version that works for earlier versions, but that branch will no longer be worked on.
+## I am based in the UK and Bitchute has block UK users from accessing the site due to the ridiculous policies of the UK government. So any further work on this add on is not possible. Anyone is more than welcome to continue the development. Thanks.
+## NOTE: This add-on now targets KODI 19+. 
+## There is also a "KODI-LEIA" branch which, barring any changes by BitChute, should work for the moment. 
 
 Welcome to my Bitchute addon for KODI
 
@@ -30,6 +32,8 @@ If you are having problems with a repo version you can install a local version y
 Download the zip file from here and install it yourself. Code tab -> Green Code button -> Download zip. Then use the "Install from zip file" in the KODI addons menu.
 
 You may need to have unknown sources set in KODI settings. Settings -> System -> Addons -> Unknown sources.
+
+NOTE:Slavegrid has put this Bitchute addon in his KODI repo at: https://slavegrid.com
 
 ## Disclaimer
 
