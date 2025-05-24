@@ -12,6 +12,7 @@ import xbmc
 
 from cache import data_cache, login_cache
 
+USER_AGENT = "Bitchute Kodi-Addon/1"
 
 class Subscription():
 
@@ -104,10 +105,9 @@ def BitchuteLogin(username, password):
 
     token  = ""
     logged_in = False
-    agent="Bitchute Kodi-Addon/1"
 
     url = "https://old.bitchute.com/accounts/login/"
-    headers = {"User-Agent": agent}
+    headers = {"User-Agent": USER_AGENT}
     req = requests.get(url, headers=headers)
 
     if (req.status_code!=200):
@@ -119,7 +119,7 @@ def BitchuteLogin(username, password):
     baseURL = "https://old.bitchute.com"
     post_data = {'csrfmiddlewaretoken': token,
                     'username': username, 'password': password}
-    headers = {'Referer': baseURL + "/", 'Origin': baseURL, "User-Agent": agent}
+    headers = {'Referer': baseURL + "/", 'Origin': baseURL, "User-Agent": USER_AGENT}
     response = requests.post(
         baseURL + "/accounts/login/", data=post_data, headers=headers, cookies=csrfJar)
 
@@ -157,7 +157,7 @@ def bt_login():
 def _get_subscriptions(cookies):
 
     url = "https://old.bitchute.com/subscriptions/"
-    req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
+    req = requests.get(url, cookies=cookies, headers={"User-Agent": USER_AGENT })
 
     #self.csrfJar = req.cookies
 
@@ -195,7 +195,7 @@ def _get_notifications(cookies):
     notifs = []
 
     url = "https://old.bitchute.com/notifications/"
-    req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
+    req = requests.get(url, cookies=cookies, headers={"User-Agent": USER_AGENT })
 
     soup = BeautifulSoup(req.text, "html.parser")
 
@@ -227,7 +227,7 @@ def _get_popular(cookies):
 
     url = "https://old.bitchute.com/"
 
-    req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
+    req = requests.get(url, cookies=cookies, headers={"User-Agent": USER_AGENT})
     cookies = req.cookies
 
     soup = BeautifulSoup(req.text, "html.parser")
@@ -267,7 +267,7 @@ def _get_trending(cookies):
 
     url = "https://old.bitchute.com/"
 
-    req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
+    req = requests.get(url, cookies=cookies, headers={"User-Agent": USER_AGENT})
     cookies = req.cookies
 
     soup = BeautifulSoup(req.text, "html.parser")
@@ -310,7 +310,7 @@ def _get_playlist(cookies, playlist_name):
 
     url = "https://old.bitchute.com/playlist/"+playlist_name+"/"
 
-    req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
+    req = requests.get(url, cookies=cookies, headers={"User-Agent": USER_AGENT})
 
     soup = BeautifulSoup(req.text, "html.parser")
 
@@ -380,7 +380,7 @@ def _get_channel(channel, page, cookies):
 
     post_data = {'csrfmiddlewaretoken': token,
                  'offset': offset}
-    headers = {'Referer': Referer, "User-Agent": "Bitchute Kodi-Addon/1"}
+    headers = {'Referer': Referer, "User-Agent": USER_AGENT}
     response = requests.post(
         url, data=post_data, headers=headers, cookies=cookies)
 
@@ -487,7 +487,7 @@ def _get_recently_active(cookies):
 
     url = "https://old.bitchute.com/channels/"
 
-    req = requests.get(url, cookies=cookies, headers={"User-Agent": "Bitchute Kodi-Addon/1"})
+    req = requests.get(url, cookies=cookies, headers={"User-Agent": USER_AGENT })
 
     soup = BeautifulSoup(req.text, "html.parser")
 
@@ -542,21 +542,44 @@ def _get_video(cookies, video_id):
 
 def _search(cookies, search_for):
 
-    results = []
+    # Extract timestamp and nonce parameters from searchAuth function
+    # embedded in the search HTML page. A new timestamp, nonce pair
+    # is required for each search API request.
 
-    Referer = "https://old.bitchute.com/search/"
+    url = "https://old.bitchute.com/search/"
+    headers = { "User-Agent": USER_AGENT }
+    response = requests.get(url, cookies=cookies, headers=headers)
+
+    text = response.text
+    str = 'searchAuth('
+    s = text.find(str) + len(str)
+    e = text.find(")", s+1)
+    params = text[s:e].split(',', 2)
+    timestamp = params[0].strip()[1:-1]
+    nonce = params[1].strip()[1:-1]
 
     url = "https://old.bitchute.com/api/search/list/"
 
-    token = cookies['csrftoken']
-
-    post_data = {'csrfmiddlewaretoken': token,
-                 'query': search_for, 'kind': 'video'}
-    headers = {'Referer': Referer, "User-Agent": "Bitchute Kodi-Addon/1"}
+    post_data = {
+            'csrfmiddlewaretoken': response.cookies['csrftoken'],
+            'timestamp' : timestamp,
+            'nonce': nonce,
+            'query': search_for,
+            'kind': 'video',
+            'duration': '',
+            'sort': 'new',
+            'page': '0',
+            }
+    headers = {
+            'referer': "https://old.bitchute.com/search/",
+            'origin': "https://old.bitchute.com",
+            "User-Agent": USER_AGENT,
+            }
     response = requests.post(
-        url, data=post_data, headers=headers, cookies=cookies)
+        url, data=post_data, headers=headers, cookies=response.cookies)
     val = json.loads(response.text)
 
+    results = []
     for result in val["results"]:
         video_id = result["id"]
         title = result["name"]
@@ -565,7 +588,6 @@ def _search(cookies, search_for):
         poster = result["images"]["thumbnail"]
         r = SearchResult(video_id=video_id, title=title,
                          description=description, channel_name=channel_name, poster=poster)
-
         results.append(r)
 
     return pickle.dumps(results)
