@@ -4,6 +4,7 @@ import pickle
 import requests
 import xbmcaddon
 from bs4 import BeautifulSoup
+from concurrent.futures import ThreadPoolExecutor
 from xbmcgui import Dialog
 import xbmc
 
@@ -11,6 +12,8 @@ from cache import data_cache, login_cache
 
 USER_AGENT = "Bitchute Kodi-Addon/1"
 use_cache = True
+use_thread_pool = True
+thread_pool_workers = 8
 
 class Subscription():
     def __init__(self, name, channel, description, channel_image):
@@ -103,6 +106,21 @@ def bt_login():
     cookies = pickle.loads(pickled_cookies)
     return cookies, True
 
+def _process_subscription(sub):
+    try:
+        channel = sub.find("a").attrs["href"].split("/")[1]
+        channel_image = sub.find("a").find("img").attrs["data-src"]
+        name = sub.find(class_="subscription-name").get_text()
+        channel = sub.find(class_="spa").attrs["href"].replace("/channel/", "")
+        description = sub.find(class_="subscription-description-text").get_text()
+    except AttributeError as e:
+        xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
+        xbmc.log(str(sub))
+        name = description = channel = channel_image = "ERROR PARSING"
+
+    return Subscription(name=name, channel=channel,
+                     description=description, channel_image=channel_image)
+
 def _get_subscriptions(cookies):
     url = "https://old.bitchute.com/subscriptions/"
     req = requests.get(url, cookies=cookies, headers={"User-Agent": USER_AGENT })
@@ -111,21 +129,17 @@ def _get_subscriptions(cookies):
     containers = soup.find_all(class_="subscription-container")
 
     subs = []
-    for sub in containers:
+    threaded = use_thread_pool
+    if threaded:
         try:
-            channel = sub.find("a").attrs["href"].split("/")[1]
-            channel_image = sub.find("a").find("img").attrs["data-src"]
-            name = sub.find(class_="subscription-name").get_text()
-            channel = sub.find(class_="spa").attrs["href"].replace("/channel/", "")
-            description = sub.find(class_="subscription-description-text").get_text()
-        except AttributeError as e:
-            xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
-            xbmc.log(str(sub))
-            name = description = channel = channel_image = "ERROR PARSING"
+            with ThreadPoolExecutor(thread_pool_workers) as p:
+                subs = list(p.map(_process_subscription, containers))
+        except:
+            threaded = False
 
-        s = Subscription(name=name, channel=channel,
-                         description=description, channel_image=channel_image)
-        subs.append(s)
+    if not threaded:
+        for sub in containers:
+            subs.append(_process_subscription(sub))
 
     return pickle.dumps(subs)
 
@@ -295,19 +309,37 @@ def _get_channel(channel, page, cookies, max_count=100):
 
     return pickle.dumps(videos)
 
+def _get_feed_sub(params):
+    (sub, cookies) = params
+    channel = pickle.loads(_get_channel(sub.channel, 0, cookies, max_count=1))
+    feed_item = None
+    if len(channel) > 0:
+        vid = channel[0]  # The latest video
+        feed_item = PlaylistEntry(video_id=vid.video_id, description=vid.description,
+                                  title=vid.title, poster=vid.poster,
+                                  channel_name=vid.channel_name,
+                                  date=vid.date, duration=vid.duration)
+    return feed_item
+
 def _get_feed(cookies):
     subs = get_subscriptions()
 
-    feed = []
+    params = []
     for sub in subs:
-        channel = get_channel(sub.channel, 0, max_count=1)
-        if len(channel) > 0:
-            vid = channel[0]  # The latest video
-            feed_item = PlaylistEntry(video_id=vid.video_id, description=vid.description,
-                                      title=vid.title, poster=vid.poster,
-                                      channel_name=vid.channel_name,
-                                      date=vid.date, duration=vid.duration)
-            feed.append(feed_item)
+        params.append((sub, cookies))
+
+    feed = []
+    threaded = use_thread_pool
+    if threaded:
+        try:
+            with ThreadPoolExecutor(thread_pool_workers) as p:
+                feed = list(p.map(_get_feed_sub, params))
+        except:
+            threaded = False
+
+    if not threaded:
+        for param in params:
+            feed.append(_get_feed_sub(param))
 
     return pickle.dumps(feed)
 
