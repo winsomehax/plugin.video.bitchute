@@ -1,6 +1,6 @@
 from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
 from xbmcgui import ListItem
-from xbmc import Player, log
+import xbmc
 
 class KODIMenu():
     def __init__(self, plugin):
@@ -11,7 +11,7 @@ class KODIMenu():
         setContent(self.h, "files")
 
     def play_now(self, play_url):
-        Player().play(play_url)
+        xbmc.Player().play(play_url)
 
     def new_info_item(self, info):
         li = ListItem(label=info)
@@ -53,7 +53,7 @@ class KODIMenu():
         li.setInfo('video', {'plot': description})
         li.setArt({'icon': iconURL, 'poster': iconURL, 'thumb': iconURL,
                    'banner': iconURL})
-        xbmc.log("!!!!: ",self.plugin.url_for(func, item_val=item_val, item_val2=item_val2))
+        xbmc.log("!!!!: " + self.plugin.url_for(func, item_val=item_val, item_val2=item_val2))
 
         addDirectoryItem(self.h, self.plugin.url_for(func, item_val=item_val, item_val2=item_val2),
                          listitem=li, isFolder=True)
