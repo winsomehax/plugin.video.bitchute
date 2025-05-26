@@ -117,8 +117,8 @@ def _get_subscriptions(cookies):
             channel = sub.find(class_="spa").attrs["href"].replace("/channel/", "")
             description = sub.find(class_="subscription-description-text").get_text()
         except AttributeError as e:
-            print("**************** ATTRIBUTE_ERROR "+str(e))
-            print(str(sub))
+            xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
+            xbmc.log(str(sub))
             name = description = channel = channel_image = "ERROR PARSING"
 
         s = Subscription(name=name, channel=channel,
@@ -141,8 +141,8 @@ def _get_notifications(cookies):
             title = n.find(class_="notification-target").get_text()
             description = n.find(class_="notification-detail").get_text()
         except AttributeError as e:
-            print("**************** ATTRIBUTE_ERROR "+str(e))
-            print(str(n))
+            xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
+            xbmc.log(str(n))
             video_id = title = description = "ERROR PARSING"
 
         notif = Notification(video_id=video_id, title=title, description=description)
@@ -171,11 +171,10 @@ def _get_popular(cookies):
 
             duration = n.find(class_="video-duration").get_text()
             date= n.find(class_="video-card-published").get_text()
-            print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: ", duration, date)
 
         except AttributeError as e:
-            print("**************** ATTRIBUTE_ERROR "+str(e))
-            print(str(n))
+            xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
+            xbmc.log(str(n))
             poster = video_id = title = channel_name = description = duration = date = "ERROR PARSING"
 
         s = PlaylistEntry(video_id=video_id, description=description, 
@@ -207,8 +206,8 @@ def _get_trending(cookies):
             date = n.find(class_="video-result-details").find("span").get_text()
 
         except AttributeError as e:
-            print("**************** ATTRIBUTE_ERROR "+str(e))
-            print(str(n))
+            xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
+            xbmc.log(str(n))
             video_id = poster = title = channel_name = description = date = duration = "ERROR PARSING"
 
         s = PlaylistEntry(video_id=video_id, description=description, title=title, 
@@ -238,8 +237,8 @@ def _get_playlist(cookies, playlist_name):
             date= n.find(class_="details").find("span").get_text()
 
         except AttributeError as e:
-            print("**************** ATTRIBUTE_ERROR "+str(e))
-            print(str(n))
+            xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
+            xbmc.log(str(n))
             video_id = title = description = poster = duration = date = "ERROR PARSING"
 
         s = PlaylistEntry(video_id=video_id, description=description, 
@@ -262,8 +261,8 @@ def _get_channel(channel, page, cookies):
     try:
         containers = soup.find_all(class_="channel-videos-container")
     except AttributeError as e:
-        print("**************** ATTRIBUTE_ERROR " + str(e))
-        print("****************: ", channel)
+        xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
+        xbmc.log("****************: ", channel)
         containers = []                   # the looping will skip later
 
     videos = []
@@ -278,8 +277,8 @@ def _get_channel(channel, page, cookies):
             poster = n.find(class_="channel-videos-image").find("img").attrs['data-src']
 
         except AttributeError as e:
-            print("**************** ATTRIBUTE_ERROR "+str(e))
-            print(str(n))
+            xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
+            xbmc.log(str(n))
             video_id = title = description = poster = "ERROR PARSING"
             date = ""
             duration = ""
@@ -322,8 +321,8 @@ def _get_recently_active(cookies):
             name = n.find(class_="channel-card-title").get_text()
 
         except AttributeError as e:
-            print("**************** ATTRIBUTE_ERROR "+str(e))
-            print(str(n))
+            xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
+            xbmc.log(str(n))
             channel_image = channel = name = "ERROR PARSING"
 
         s = Subscription(name=name, channel=channel, description="", 
