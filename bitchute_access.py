@@ -435,10 +435,11 @@ def _get_feed(cookies):
     for sub in subs:
 
         channel = get_channel(sub.channel,0)
-        vid = channel[0]  # The latest video
-        feed_item = PlaylistEntry(video_id=vid.video_id, description=vid.description,
-                                  title=vid.title, poster=vid.poster, channel_name=vid.channel_name, date=vid.date, duration=vid.duration)
-        feed.append(feed_item)
+        if len(channel) > 0:
+            vid = channel[0]  # The latest video
+            feed_item = PlaylistEntry(video_id=vid.video_id, description=vid.description,
+                                      title=vid.title, poster=vid.poster, channel_name=vid.channel_name, date=vid.date, duration=vid.duration)
+            feed.append(feed_item)
 
     return pickle.dumps(feed)
 
