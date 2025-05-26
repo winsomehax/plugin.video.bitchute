@@ -10,6 +10,7 @@ import xbmc
 from cache import data_cache, login_cache
 
 USER_AGENT = "Bitchute Kodi-Addon/1"
+use_cache = True
 
 class Subscription():
     def __init__(self, name, channel, description, channel_image):
@@ -18,12 +19,6 @@ class Subscription():
         self.description = description
         self.channel_image = channel_image
 
-class Notification():
-    def __init__(self, video_id, title, description):
-        self.video_id = video_id
-        self.title = title
-        self.description = description
-
 class Video():
     def __init__(self, videoURL, poster, title, description):
         self.videoURL = videoURL
@@ -31,33 +26,39 @@ class Video():
         self.title = title
         self.description = description
 
-class SearchResult():
+class NotificationEntry():
+    def __init__(self, video_id, title, description):
+        self.video_id = video_id
+        self.title = title
+        self.description = description
+
+class SearchEntry():
     def __init__(self, video_id, description, title, poster, channel_name):
         self.video_id = video_id
-        self.description = description
         self.title = title
+        self.description = description
         self.poster = poster
         self.channel_name = channel_name
 
 class ChannelEntry():
     def __init__(self, video_id, poster, title, description, channel_name=u"", date=0, duration=0):
         self.video_id = video_id
-        self.poster = poster
         self.title = title
         self.description = description
+        self.poster = poster
         self.channel_name = channel_name
         self.date=date
         self.duration=duration
 
 class PlaylistEntry():
     def __init__(self, video_id, description, title, poster, channel_name=u"", duration=u"", date=u""):
-        self.video_id = video_id #.replace('&nbsp', ' ')
-        self.description = description #.replace('&nbsp', ' ')
-        self.title = title #.replace('&nbsp', ' ')
-        self.poster = poster #.replace('&nbsp', ' ')
-        self.channel_name = channel_name #.replace('&nbsp', ' ')
-        self.duration=duration #.replace('&nbsp', ' ')
-        self.date=date #.replace('&nbsp', ' ')
+        self.video_id = video_id
+        self.title = title
+        self.description = description
+        self.poster = poster
+        self.channel_name = channel_name
+        self.date=date
+        self.duration=duration
 
 def BitchuteLogin(username, password):
     url = "https://old.bitchute.com/accounts/login/"
@@ -145,7 +146,7 @@ def _get_notifications(cookies):
             xbmc.log(str(n))
             video_id = title = description = "ERROR PARSING"
 
-        notif = Notification(video_id=video_id, title=title, description=description)
+        notif = NotificationEntry(video_id=video_id, title=title, description=description)
         notifs.append(notif)
 
     return pickle.dumps(notifs)
@@ -247,7 +248,7 @@ def _get_playlist(cookies, playlist_name):
 
     return pickle.dumps(playlist)
 
-def _get_channel(channel, page, cookies):
+def _get_channel(channel, page, cookies, max_count=100):
     offset = page*25
     referer = "https://old.bitchute.com/channel/"
     url = "https://old.bitchute.com/channel/"+channel+"/extend/"
@@ -266,7 +267,10 @@ def _get_channel(channel, page, cookies):
         containers = []                   # the looping will skip later
 
     videos = []
+    count = 0
     for n in containers:
+        if count > max_count:
+            break
         try:
             t = n.find(class_="channel-videos-title").find("a")
             video_id = t.attrs["href"].split("/")[2]
@@ -286,16 +290,16 @@ def _get_channel(channel, page, cookies):
         s = ChannelEntry(video_id=video_id, description=description, title=title,
                          poster=poster, channel_name="", date=date, duration=duration)
         videos.append(s)
+        count = count + 1
 
     return pickle.dumps(videos)
-
 
 def _get_feed(cookies):
     subs = get_subscriptions()
 
     feed = []
     for sub in subs:
-        channel = get_channel(sub.channel,0)
+        channel = get_channel(sub.channel, 0, max_count=1)
         if len(channel) > 0:
             vid = channel[0]  # The latest video
             feed_item = PlaylistEntry(video_id=vid.video_id, description=vid.description,
@@ -405,7 +409,7 @@ def _search(cookies, search_for):
         description = result["description"]
         channel_name = result["channel_name"]
         poster = result["images"]["thumbnail"]
-        r = SearchResult(video_id=video_id, title=title,
+        r = SearchEntry(video_id=video_id, title=title,
                          description=description, channel_name=channel_name, poster=poster)
         results.append(r)
 
@@ -414,82 +418,124 @@ def _search(cookies, search_for):
 # Wrappers to ensure the subs, notifications, playlists are cached for 15 minutes
 
 def get_subscriptions():
+    global use_cache
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_subscriptions, cookies))
+        if use_cache:
+            return pickle.loads(data_cache.cacheFunction(_get_subscriptions, cookies))
+        else:
+            return pickle.loads(_get_subscriptions(cookies))
 
     return []
 
 def get_notifications():
+    global use_cache
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_notifications, cookies))
+        if use_cache:
+            return pickle.loads(data_cache.cacheFunction(_get_notifications, cookies))
+        else:
+            return pickle.loads(_get_notifications(cookies))
 
     return []
 
 def get_playlist(playlist):
+    global use_cache
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_playlist, cookies, playlist))
+        if use_cache:
+            return pickle.loads(data_cache.cacheFunction(_get_playlist, cookies, playlist))
+        else:
+            return pickle.loads(_get_playlist(cookies, playlist))
 
     return []
 
-def get_channel(channel, page):
+def get_channel(channel, page, max_count=100):
+    global use_cache
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_channel, channel, page, cookies))
+        if use_cache:
+            res = data_cache.cacheFunction(_get_channel, channel, page, cookies, max_count)
+        else:
+            res = _get_channel(channel, page, cookies, max_count)
+        return pickle.loads(res)
 
     return []
 
 def get_popular():
+    global use_cache
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_popular, cookies))
+        if use_cache:
+            return pickle.loads(data_cache.cacheFunction(_get_popular, cookies))
+        else:
+            return pickle.loads(_get_popular(cookies))
 
     return []
 
 def get_trending():
+    global use_cache
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_trending, cookies))
+        if use_cache:
+            return pickle.loads(data_cache.cacheFunction(_get_trending, cookies))
+        else:
+            return pickle.loads(_get_trending(cookies))
 
     return []
 
 def get_feed():
+    global use_cache
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_feed, cookies))
+        if use_cache:
+            return pickle.loads(data_cache.cacheFunction(_get_feed, cookies))
+        else:
+            return pickle.loads(_get_feed(cookies))
 
     return []
 
 def search(search_for):
+    global use_cache
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_search, cookies, search_for))
+        if use_cache:
+            return pickle.loads(data_cache.cacheFunction(_search, cookies, search_for))
+        else:
+            return pickle.loads(_search(cookies, search_for))
 
     return []
 
 def get_recently_active():
+    global use_cache
     global data_cache
     cookies, success = bt_login()
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_recently_active, cookies))
+        if use_cache:
+            return pickle.loads(data_cache.cacheFunction(_get_recently_active, cookies))
+        else:
+            return pickle.loads(_get_recently_active(cookies))
 
     return []
 
 def get_video(video_id):
+    global use_cache
     global data_cache
     cookies = []
     success = True
     if success:
-        return pickle.loads(data_cache.cacheFunction(_get_video, cookies, video_id))
+        if use_cache:
+            res = data_cache.cacheFunction(_get_video, cookies, video_id)
+        else:
+            res = _get_video(cookies, video_id)
+        return pickle.loads(res)
 
     return []

@@ -71,6 +71,30 @@ def search():
 def loc(label):
     return(xbmcaddon.Addon().getLocalizedString(label))
 
+def entries_to_listitems(entries, finalize_folder=True):
+    global menu
+    if finalize_folder:
+        menu.start_folder()
+
+    if 0 == len(entries):
+        menu.new_info_item(loc(30028))
+    else:
+        for n in entries:
+            description = ""
+            poster = ""
+            if not isinstance(n, bitchute_access.NotificationEntry):
+                poster = n.poster
+                description += "[B]" + n.channel_name + "[/B]\n"
+                if not isinstance(n, bitchute_access.SearchEntry):
+                    description += "Date: " + n.date + "\n"
+                    description += "Duration: "+n.duration+"\n"
+            description += n.description
+
+            menu.new_folder_item(item_name=n.title, func=play_now, item_val=n.video_id, description=description, iconURL=poster) #, label2=n.date)
+
+    if finalize_folder:
+        menu.end_folder()
+
 def build_main_menu():
     global menu
     menu.start_folder()
@@ -102,19 +126,7 @@ def build_subscriptions():
     menu.end_folder()
 
 def build_notifications():
-    global menu
-    menu.start_folder()
-
-    notifications = bitchute_access.get_notifications()
-
-    if 0 == len(notifications):
-        menu.new_info_item(loc(30027))
-    else:
-        for n in notifications:
-            menu.new_folder_item(item_name=n.title, description=n.description, func=play_now, item_val=n.video_id,
-                                 iconURL="https://www.bitchute.com/static/v129/images/logo-full-day.png")
-
-    menu.end_folder()
+    entries_to_listitems(bitchute_access.get_notifications())
 
 def build_a_channel(item_val, page):
     global menu
@@ -125,9 +137,7 @@ def build_a_channel(item_val, page):
     if(page>0):
         menu.new_folder_item2(item_name="<<<< Previous page >>>>", func=channel_offset, item_val=item_val, item_val2=(page-1), description="Previous page", iconURL=None)
 
-    for v in videos:
-        menu.new_folder_item(
-            item_name=v.title, func=play_now, item_val=v.video_id, description=v.channel_name+"\nDate: "+v.date+"\nDuration: "+v.duration+"\n"+v.description, iconURL=v.poster, label2=v.date)
+    entries_to_listitems(videos, finalize_folder=False)
 
     if len(videos)==25:
         menu.new_folder_item2(item_name="<<<< Next page >>>>", func=channel_offset, item_val=item_val, item_val2=(page+1), description="Next page", iconURL=None)
@@ -135,66 +145,16 @@ def build_a_channel(item_val, page):
     menu.end_folder()
 
 def build_playlist(playlist):
-    global menu
-    menu.start_folder()
-
-    entries = bitchute_access.get_playlist(playlist)
-
-    if 0 == len(entries):
-        menu.new_info_item(loc(30028))
-    else:
-        for n in entries:
-            menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id, description="Date: "+n.date+"\nDuration: "+n.duration+"\n"+n.description, iconURL=n.poster)
-
-    menu.end_folder()
+    entries_to_listitems(bitchute_access.get_playlist(playlist))
 
 def build_feed():
-    global menu
-    menu.start_folder()
-
-    entries = bitchute_access.get_feed()
-
-    if 0 == len(entries):
-        menu.new_info_item(loc(30028))
-    else:
-        for n in entries:
-            menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"Date: "+n.date+"\nDuration: "+n.duration+"\n"+n.description, iconURL=n.poster)
-
-    menu.end_folder()
+    entries_to_listitems(bitchute_access.get_feed())
 
 def build_popular():
-    global menu
-    menu.start_folder()
-
-    entries = bitchute_access.get_popular()
-
-    if 0 == len(entries):
-        menu.new_info_item(loc(30028))
-    else:
-        for n in entries:
-
-            menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"\n"+"Date: "+n.date+"\nDuration: "+n.duration+"\n"+n.description, iconURL=n.poster)
-
-    menu.end_folder()
+    entries_to_listitems(bitchute_access.get_popular())
 
 def build_trending():
-    global menu
-    menu.start_folder()
-
-    entries = bitchute_access.get_trending()
-
-    if 0 == len(entries):
-        menu.new_info_item(loc(30028))
-    else:
-        for n in entries:
-
-            menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"\n"+"Date: "+n.date+"\nDuration: "+n.duration+"\n"+n.description, iconURL=n.poster)
-
-    menu.end_folder()
+    entries_to_listitems(bitchute_access.get_trending())
 
 def build_search():
     dlg = Dialog()
@@ -202,20 +162,7 @@ def build_search():
     if d.strip() == "":
         return
 
-    global menu
-    menu.start_folder()
-
-    results = bitchute_access.search(d)
-
-    if 0 == len(results):
-        menu.new_info_item(loc(30028))
-    else:
-        for n in results:
-
-            menu.new_folder_item(
-                item_name=n.title, func=play_now, item_val=n.video_id, description=n.channel_name+"\n"+n.description, iconURL=n.poster)
-
-    menu.end_folder()
+    entries_to_listitems(bitchute_access.search(d))
 
 def play_video(video_id):
     global menu
