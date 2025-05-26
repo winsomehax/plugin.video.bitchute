@@ -68,6 +68,7 @@ def BitchuteLogin(username, password):
     if (req.status_code!=200):
         return None, False
 
+    csrfJar = req.cookies
     baseURL = "https://old.bitchute.com"
     post_data = { 'csrfmiddlewaretoken': req.cookies["csrftoken"],
                  'username': username, 'password': password }
