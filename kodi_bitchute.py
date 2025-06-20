@@ -81,16 +81,15 @@ def entries_to_listitems(entries, finalize_folder=True):
     else:
         for n in entries:
             description = ""
-            poster = ""
             if not isinstance(n, bitchute_access.NotificationEntry):
-                poster = n.poster
                 description += "[B]" + n.channel_name + "[/B]\n"
                 if not isinstance(n, bitchute_access.SearchEntry):
                     description += "Date: " + n.date + "\n"
-                    description += "Duration: "+n.duration+"\n"
+                    description += "Duration: "+n.duration+"\n\n"
             description += n.description
 
-            menu.new_folder_item(item_name=n.title, func=play_now, item_val=n.video_id, description=description, iconURL=poster) #, label2=n.date)
+            menu.new_video_item(item_name=n.title, url=n.video.video_url,
+                                description=description, iconURL=n.video.poster)
 
     if finalize_folder:
         menu.end_folder()

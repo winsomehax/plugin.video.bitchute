@@ -128,4 +128,14 @@ msgctxt "#30030"
 msgid "Enter the video ID"
 msgstr ""
 
+msgctxt "#30031"
+msgid "Pre-cache video links"
+msgstr ""
 
+msgctxt "#30032"
+msgid "General"
+msgstr ""
+
+msgctxt "#30033"
+msgid "High-resolution thumbnails"
+msgstr ""

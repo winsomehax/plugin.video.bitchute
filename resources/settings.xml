@@ -1,5 +1,40 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<settings>
-    <setting label="30002" type="text" id="user" default=""></setting>
-    <setting label="30003" type="text" option="hidden" id="password" default=""></setting>
+<settings version="1">
+    <section id="plugin.video.bitchute">
+		<category id="general" label="30032">
+			<group id="main_group">
+				<setting id="user" type="string" label="30002" help="Bitchute login id.">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>30002</heading>
+					</control>
+				</setting>
+				<setting id="password" type="string" label="30003" help="Bitchute password.">
+					<level>0</level>
+					<default/>
+					<constraints>
+						<allowempty>true</allowempty>
+					</constraints>
+					<control type="edit" format="string">
+						<heading>30003</heading>
+						<hidden>true</hidden>
+					</control>
+				</setting>
+				<setting id="precache_video_links" label="30031" type="boolean" help="Pre-cache video links in the background to speed-up performance.">
+					<level>1</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="high_resolution_thumbnails" label="30033" type="boolean" help="Use 640x320 thumbnails rather than 320x180">
+					<level>3</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+			</group>
+		</category>
+	</section>
 </settings>

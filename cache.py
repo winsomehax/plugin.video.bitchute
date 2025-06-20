@@ -6,7 +6,10 @@ except:
     import storageserverdummy as StorageServer
 
 # add version to name so if there is a version bump it avoid cache issues
+version = xbmcaddon.Addon().getAddonInfo('version')
 login_cache = StorageServer.StorageServer(
-    "bitchute_logindetails"+xbmcaddon.Addon().getAddonInfo('version'), 24)  # refresh login per day (24hrs)
+    "bitchute_logindetails"+version, 24)  # refresh login per day (24hrs)
 data_cache = StorageServer.StorageServer(
-    "bitchute_data"+xbmcaddon.Addon().getAddonInfo('version'), 0.25)  # reloads subs per 15m
+    "bitchute_data"+version, 0.25)  # reloads subs per 15m
+video_cache = StorageServer.StorageServer(
+    "bitchute_data"+version, 7*24)

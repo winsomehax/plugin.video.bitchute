@@ -45,6 +45,18 @@ class KODIMenu():
         addDirectoryItem(self.h, self.plugin.url_for(func, item_val=item_val),
                          listitem=li, isFolder=True)
 
+    def new_video_item(self, item_name, url, iconURL="", description="", label2="", isFolder=False):
+        li = ListItem(label=item_name)
+        li.setIsFolder(True)
+        li.setProperty('IsPlayable', 'True')
+        # This is just so that the left hand plot shows up in Kodi
+        li.setInfo('video', {'plot': description})
+        li.addStreamInfo('video', {'duration': label2, 'plot': description})
+        li.setArt({'icon': iconURL, 'poster': iconURL,
+                   'thumb': iconURL, 'banner': iconURL})
+
+        addDirectoryItem(self.h, url, listitem=li, isFolder=False)
+
     def new_folder_item2(self, item_name, func, item_val, item_val2, iconURL="", description=""):
         li = ListItem(label=item_name)
         li.setIsFolder(True)
