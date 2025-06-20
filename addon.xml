@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.bitchute" name="bitchute" version="2.3.1" provider-name="winsomehax">
+<addon id="plugin.video.bitchute" name="bitchute" version="2.3.2" provider-name="MasterSlave">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.routing" version="0.2.0"/>
@@ -12,20 +12,21 @@
     </extension>
     <extension point="xbmc.service" library="service.py" />
     <extension point="xbmc.addon.metadata">
-        <summary lang="en_GB">Viewing videos from BitChute.com</summary>
-        <description lang="en_GB">Viewing videos from BitChute.com</description>
-        <language>English</language>
+        <summary lang="en_GB">Bitchute.com Addon</summary>
+        <description lang="en_GB">A video addon for the free-speech video platform Bitchute.com.</description>
         <platform>all</platform>
         <license>GPL-2.0</license>
-        <forum>https://github.com/winsomehax/plugin.video.bitchute</forum>
-        <website>https://github.com/winsomehax/plugin.video.bitchute</website>
-        <email>winsomehax@gmail.com</email>
-        <source>https://github.com/winsomehax/plugin.video.bitchute</source>
-        <news>https://github.com/winsomehax/plugin.video.bitchute</news>
-        <disclaimer lang="en">It's yours. If you break it, you can keep the pieces!</disclaimer>
+        <source>https://git.slavegrid.com/plugin.video.bitchute</source>
+        <website>https://slavegrid.com</website>
+        <email>ms@slavegrid.com</email>
+        <language>en</language>
+        <forum>https://tracker.slavegrid.com/projects/plugin-video-bitchute/boards</forum>
         <assets>
             <icon>resources/icon.png</icon>
             <fanart>resources/fanart.jpg</fanart>
         </assets>
+		<news>v1.3.2
+[fix] Bug #18 - Doesn't play next video
+		</news>
     </extension>
 </addon>
