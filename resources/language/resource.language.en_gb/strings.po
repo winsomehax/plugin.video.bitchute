@@ -21,7 +21,7 @@ msgid "Bitchute password"
 msgstr ""
 
 msgctxt "#30004"
-msgid "Set your Bitchute user"
+msgid "Settings"
 msgstr ""
 
 msgctxt "#30005"
