@@ -139,3 +139,7 @@ msgstr ""
 msgctxt "#30033"
 msgid "High-resolution thumbnails"
 msgstr ""
+
+msgctxt "#30034"
+msgid "Legacy feed behavior"
+msgstr ""

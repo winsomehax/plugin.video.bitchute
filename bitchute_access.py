@@ -15,7 +15,6 @@ REQUEST_TIMEOUT = 15
 addon = xbmcaddon.Addon()
 use_cache = True
 use_video_cache = True
-use_thread_pool = False
 thread_pool_workers = 8
 
 class Subscription():
@@ -142,7 +141,7 @@ def _get_subscriptions(cookies):
     containers = soup.find_all(class_="subscription-container")
 
     subs = []
-    threaded = use_thread_pool
+    threaded = True
     if threaded:
         try:
             with ThreadPoolExecutor(thread_pool_workers) as p:
@@ -180,13 +179,13 @@ def _get_notifications(cookies):
 
     return pickle.dumps(notifs)
 
-def _get_popular(cookies):
+def _build_playlist_common(listing_id, cookies):
     url = "https://old.bitchute.com/"
     resp = _get(url, cookies=cookies)
     cookies = resp.cookies
 
     soup = BeautifulSoup(resp.text, "html.parser")
-    popular = soup.find(id="listing-popular")
+    popular = soup.find(id=listing_id)
     containers = popular.find_all(class_="video-card")
 
     playlist = []
@@ -198,22 +197,25 @@ def _get_popular(cookies):
             channel_name = n.find(
                 class_="video-card-channel").find("a").get_text()
             description = ""
-
             duration = n.find(class_="video-duration").get_text()
-            date= n.find(class_="video-card-published").get_text()
+            date = n.find(class_="video-card-published").get_text()
+
+            video = get_video(video_id)
+            s = PlaylistEntry(video=video, description=description, title=title, 
+                              channel_name=channel_name, date=date, duration=duration)
+            playlist.append(s)
 
         except AttributeError as e:
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
             xbmc.log(str(n))
-            poster = video_id = title = channel_name = description = duration = date = "ERROR PARSING"
-
-        video = get_video(video_id)
-        s = PlaylistEntry(video=video, description=description, title=title, 
-                          channel_name=channel_name, date=date, duration=duration)
-        playlist.append(s)
 
     return pickle.dumps(playlist)
 
+def _get_popular(cookies):
+    return _build_playlist_common("listing-popular", cookies)
+
+def _get_feed(cookies):
+    return _build_playlist_common("listing-subscribed", cookies)
 
 def _get_trending(cookies):
     url = "https://old.bitchute.com/"
@@ -235,18 +237,16 @@ def _get_trending(cookies):
             duration = n.find(class_="video-duration").get_text()
             date = n.find(class_="video-result-details").find("span").get_text()
 
+            video = get_video(video_id)
+            s = PlaylistEntry(video=video, description=description, title=title, 
+                              channel_name=channel_name, date=date, duration=duration)
+            playlist.append(s)
+
         except AttributeError as e:
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
             xbmc.log(str(n))
-            video_id = poster = title = channel_name = description = date = duration = "ERROR PARSING"
-
-        video = get_video(video_id)
-        s = PlaylistEntry(video=video, description=description, title=title, 
-                          channel_name=channel_name, date=date, duration=duration)
-        playlist.append(s)
 
     return pickle.dumps(playlist)
-
 
 def _get_playlist(cookies, playlist_name):
     url = "https://old.bitchute.com/playlist/"+playlist_name+"/"
@@ -325,7 +325,7 @@ def _get_channel(channel, page, cookies, max_count=100):
 
     return pickle.dumps(videos)
 
-def _get_feed_sub(params):
+def _get_feed_sub_legacy(params):
     (sub, cookies) = params
     channel = pickle.loads(_get_channel(sub.channel, 0, cookies, max_count=1))
     feed_item = None
@@ -335,7 +335,7 @@ def _get_feed_sub(params):
                                   title=chan.title, channel_name=sub.name, date=chan.date, duration=chan.duration)
     return feed_item
 
-def _get_feed(cookies):
+def _get_feed_legacy(cookies):
     subs = get_subscriptions()
 
     params = []
@@ -343,17 +343,8 @@ def _get_feed(cookies):
         params.append((sub, cookies))
 
     feed = []
-    threaded = use_thread_pool
-    if threaded:
-        try:
-            with ThreadPoolExecutor(thread_pool_workers) as p:
-                feed = list(p.map(_get_feed_sub, params))
-        except:
-            threaded = False
-
-    if not threaded:
-        for param in params:
-            feed.append(_get_feed_sub(param))
+    for param in params:
+        feed.append(_get_feed_sub_legacy(param))
 
     return pickle.dumps(feed)
 
@@ -480,7 +471,7 @@ def get_subscriptions():
     global data_cache
     cookies, success = bt_login()
     if success:
-        if use_cache and not use_thread_pool:
+        if use_cache:
             return pickle.loads(data_cache.cacheFunction(_get_subscriptions, cookies))
         else:
             return pickle.loads(_get_subscriptions(cookies))
@@ -553,8 +544,12 @@ def get_feed():
     global data_cache
     cookies, success = bt_login()
     if success:
-        if use_cache and not use_thread_pool:
-            return pickle.loads(data_cache.cacheFunction(_get_feed, cookies))
+        if xbmcaddon.Addon().getSettingBool("legacy_feed_behavior"):
+            get_feed_func = _get_feed_legacy
+        else:
+            get_feed_func = _get_feed
+        if use_cache:
+            return pickle.loads(data_cache.cacheFunction(get_feed_func, cookies))
         else:
             return pickle.loads(_get_feed(cookies))
 

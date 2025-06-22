@@ -34,6 +34,11 @@
 					<default>true</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="legacy_feed_behavior" label="30034" type="boolean" help="Use legacy feed behavior">
+					<level>3</level>
+					<default>false</default>
+					<control type="toggle"/>
+				</setting>
 			</group>
 		</category>
 	</section>
