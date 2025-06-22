@@ -386,9 +386,9 @@ def _get_recently_active(cookies):
 def _get_video(video_id):
     url = f'https://old.bitchute.com/api/beta9/embed/{video_id}/'
     resp = _get(url)
-    backoff = 1.0
+    backoff = 1
     while resp.status_code == 429: # rate limited
-        if backoff > 128.0:
+        if backoff > 128:
             raise Exception("Max rate-limiting backoff of 256 seconds reached: Aborting")
 
         xbmc.log("Rate limited. Backing off for {} seconds".format(backoff))
@@ -396,7 +396,7 @@ def _get_video(video_id):
 
         resp = _get(url)
 
-        backoff *= 2.0
+        backoff *= 2
 
     # BeautifulSoup can't process JS but the video values are embedded
     # in the embedded video viewer script JS.
