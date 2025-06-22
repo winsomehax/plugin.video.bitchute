@@ -143,3 +143,7 @@ msgstr ""
 msgctxt "#30034"
 msgid "Legacy feed behavior"
 msgstr ""
+
+msgctxt "#30035"
+msgid "Next page"
+msgstr ""

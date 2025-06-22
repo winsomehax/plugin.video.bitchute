@@ -415,7 +415,7 @@ def _get_video(video_id):
     return pickle.dumps(Video(video_id=video_id, video_url=media_url, poster=thumbnail_url,
                   title=video_name))
 
-def _search(cookies, search_for):
+def _search(cookies, query, page):
     # Extract timestamp and nonce parameters from searchAuth function
     # embedded in the search HTML page. A new timestamp, nonce pair
     # is required for each search API request.
@@ -436,11 +436,11 @@ def _search(cookies, search_for):
             'csrfmiddlewaretoken': response.cookies['csrftoken'],
             'timestamp' : timestamp,
             'nonce': nonce,
-            'query': search_for,
+            'query': query,
             'kind': 'video',
             'duration': '',
             'sort': 'new',
-            'page': '0',
+            'page': page,
             }
     headers = {
             'referer': "https://old.bitchute.com/search/",
@@ -454,7 +454,7 @@ def _search(cookies, search_for):
     for result in val["results"]:
         video_id = result["id"]
         title = result["name"]
-        description = result["description"]
+        description = result["description"].lstrip().rstrip().replace('<p>','').replace('</p>','')
         channel_name = result["channel_name"]
         poster = result["images"]["thumbnail"]
         video = get_video(video_id)
@@ -541,13 +541,13 @@ def get_feed():
 
     return []
 
-def search(search_for):
+def search(query, page):
     cookies, success = bt_login()
     if success:
         if use_cache:
-            return pickle.loads(data_cache.cacheFunction(_search, cookies, search_for))
+            return pickle.loads(data_cache.cacheFunction(_search, cookies, query, page))
         else:
-            return pickle.loads(_search(cookies, search_for))
+            return pickle.loads(_search(cookies, query, page))
 
     return []
 

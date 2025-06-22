@@ -18,17 +18,6 @@ class KODIMenu():
         li.setProperty('IsPlayable', 'False')
         addDirectoryItem(self.h, "", listitem=li, isFolder=False)
 
-    def new_folder_item(self, item_name, func, iconURL="", description="", item_val=None):
-        li = ListItem(label=item_name)
-        li.setIsFolder(True)
-        li.setProperty('IsPlayable', 'True')
-        li.getVideoInfoTag().setPlot(description)
-        li.setArt({'icon': iconURL, 'poster': iconURL, 'thumb': iconURL,
-                   'banner': iconURL})
-
-        addDirectoryItem(self.h, self.plugin.url_for(func, item_val=item_val),
-                         listitem=li, isFolder=True)
-
     def new_video_item(self, item_name, url, iconURL="", description=""):
         li = ListItem(label=item_name)
         li.setProperty('IsPlayable', 'True')
@@ -38,16 +27,15 @@ class KODIMenu():
 
         addDirectoryItem(self.h, url, listitem=li, isFolder=False)
 
-    def new_folder_item2(self, item_name, func, item_val, item_val2, iconURL="", description=""):
+
+    def new_folder_item(self, item_name, description, iconURL, func, **kwargs):
         li = ListItem(label=item_name)
         li.setIsFolder(True)
         li.setProperty('IsPlayable', 'True')
         li.getVideoInfoTag().setPlot(description)
         li.setArt({'icon': iconURL, 'poster': iconURL, 'thumb': iconURL,
                    'banner': iconURL})
-        xbmc.log("!!!!: " + self.plugin.url_for(func, item_val=item_val, item_val2=item_val2))
-
-        addDirectoryItem(self.h, self.plugin.url_for(func, item_val=item_val, item_val2=item_val2),
+        addDirectoryItem(self.h, self.plugin.url_for(func, **kwargs),
                          listitem=li, isFolder=True)
 
     def end_folder(self):

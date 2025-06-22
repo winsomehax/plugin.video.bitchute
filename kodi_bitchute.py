@@ -1,6 +1,9 @@
 import routing
-from xbmcgui import Dialog, INPUT_ALPHANUM
+from urllib.parse import quote_plus,unquote_plus
+import xbmc
 import xbmcaddon
+from xbmcgui import Dialog, INPUT_ALPHANUM
+
 import KODIMenu as kodi_menu
 import bitchute_access
 
@@ -21,7 +24,7 @@ def notifications():
 
 @plugin.route('/favourites')
 def favourites():
-    build_playlist("favorites")  # NOTE: US spelling. yuck.
+    build_playlist("favorites")
 
 @plugin.route('/watch-later')
 def watch_later():
@@ -66,7 +69,25 @@ def open_settings():
 
 @plugin.route('/search')
 def search():
-    build_search()
+    dlg = Dialog()
+    query = dlg.input(loc(30029), type=INPUT_ALPHANUM)
+    if query.strip() == "":
+        return
+
+    search_pager(query=query, page=0)
+    xbmc.executebuiltin('Container.Update(%s,replace)' % plugin.url_for(search_pager, query=quote_plus(query), page=0))
+
+@plugin.route('/search/<query>/<page>')
+def search_pager(query, page):
+    query = unquote_plus(query)
+    page = int(page)
+    menu.start_folder()
+    entries = bitchute_access.search(query, str(page))
+    entries_to_listitems(entries, finalize_folder=False)
+    if len(entries) == 10:
+        menu.new_folder_item(loc(30035), loc(30035),
+                             None, search_pager, query=query, page=page+1) # Next page
+    menu.end_folder()
 
 def loc(label):
     return(xbmcaddon.Addon().getLocalizedString(label))
@@ -85,7 +106,11 @@ def entries_to_listitems(entries, finalize_folder=True):
                 description += "[B]" + n.channel_name + "[/B]\n"
                 if not isinstance(n, bitchute_access.SearchEntry):
                     description += "Date: " + n.date + "\n"
-                    description += "Duration: "+n.duration+"\n\n"
+                    description += "Duration: "+n.duration+"\n"
+
+            if description != "":
+                description += "\n"
+
             description += n.description
 
             menu.new_video_item(item_name=n.title, url=n.video.video_url,
@@ -97,16 +122,16 @@ def entries_to_listitems(entries, finalize_folder=True):
 def build_main_menu():
     global menu
     menu.start_folder()
-    menu.new_folder_item(item_name=loc(30022), description=loc(30023), item_val=None, func=feed)
-    menu.new_folder_item(item_name=loc(30006), description=loc(30007), item_val=None, func=subscriptions)
-    menu.new_folder_item(item_name=loc(30010), description=loc(30011), item_val=None, func=notifications)
-    menu.new_folder_item(item_name=loc(30018), description=loc(30019), item_val=None, func=popular)
-    menu.new_folder_item(item_name=loc(30020), description=loc(30021), item_val=None, func=trending)
-    menu.new_folder_item(item_name=loc(30012), description=loc(30013), item_val=None, func=favourites)
-    menu.new_folder_item(item_name=loc(30014), description=loc(30015), item_val=None, func=watch_later)
-    menu.new_folder_item(item_name=loc(30008), description=loc(30009), item_val=None, func=search)
-    menu.new_folder_item(item_name=loc(30004), description=loc(30005), item_val=None, func=open_settings)
-    menu.new_folder_item(item_name=loc(30024), description=loc(30025), item_val=None, func=video_by_id)
+    menu.new_folder_item(item_name=loc(30022), description=loc(30023), iconURL=None, item_val=None, func=feed)
+    menu.new_folder_item(item_name=loc(30006), description=loc(30007), iconURL=None, item_val=None, func=subscriptions)
+    menu.new_folder_item(item_name=loc(30010), description=loc(30011), iconURL=None, item_val=None, func=notifications)
+    menu.new_folder_item(item_name=loc(30018), description=loc(30019), iconURL=None, item_val=None, func=popular)
+    menu.new_folder_item(item_name=loc(30020), description=loc(30021), iconURL=None, item_val=None, func=trending)
+    menu.new_folder_item(item_name=loc(30012), description=loc(30013), iconURL=None, item_val=None, func=favourites)
+    menu.new_folder_item(item_name=loc(30014), description=loc(30015), iconURL=None, item_val=None, func=watch_later)
+    menu.new_folder_item(item_name=loc(30008), description=loc(30009), iconURL=None, item_val=None, func=search)
+    menu.new_folder_item(item_name=loc(30004), description=loc(30005), iconURL=None, item_val=None, func=open_settings)
+    menu.new_folder_item(item_name=loc(30024), description=loc(30025), iconURL=None, item_val=None, func=video_by_id)
     menu.end_folder()
 
 def build_subscriptions():
@@ -133,13 +158,10 @@ def build_a_channel(item_val, page):
 
     videos = bitchute_access.get_channel(item_val, page)
 
-    if(page>0):
-        menu.new_folder_item2(item_name="<<<< Previous page >>>>", func=channel_offset, item_val=item_val, item_val2=(page-1), description="Previous page", iconURL=None)
-
     entries_to_listitems(videos, finalize_folder=False)
 
     if len(videos)==25:
-        menu.new_folder_item2(item_name="<<<< Next page >>>>", func=channel_offset, item_val=item_val, item_val2=(page+1), description="Next page", iconURL=None)
+        menu.new_folder_item(loc(30035), loc(30035), None, channel_offset, item_val=item_val, item_val2=page+1) # Next page
 
     menu.end_folder()
 
@@ -154,14 +176,6 @@ def build_popular():
 
 def build_trending():
     entries_to_listitems(bitchute_access.get_trending())
-
-def build_search():
-    dlg = Dialog()
-    d = dlg.input(loc(30029), type=INPUT_ALPHANUM)
-    if d.strip() == "":
-        return
-
-    entries_to_listitems(bitchute_access.search(d))
 
 def play_video(video_id):
     global menu
