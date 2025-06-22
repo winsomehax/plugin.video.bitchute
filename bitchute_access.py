@@ -467,8 +467,6 @@ def _search(cookies, search_for):
 # Wrappers to ensure the subs, notifications, playlists are cached for 15 minutes
 
 def get_subscriptions():
-    global use_cache
-    global data_cache
     cookies, success = bt_login()
     if success:
         if use_cache:
@@ -479,8 +477,6 @@ def get_subscriptions():
     return []
 
 def get_notifications():
-    global use_cache
-    global data_cache
     cookies, success = bt_login()
     if success:
         if use_cache:
@@ -491,8 +487,6 @@ def get_notifications():
     return []
 
 def get_playlist(playlist):
-    global use_cache
-    global data_cache
     cookies, success = bt_login()
     if success:
         if use_cache:
@@ -503,8 +497,6 @@ def get_playlist(playlist):
     return []
 
 def get_channel(channel, page, max_count=100):
-    global use_cache
-    global data_cache
     cookies, success = bt_login()
     if success:
         if use_cache:
@@ -516,8 +508,6 @@ def get_channel(channel, page, max_count=100):
     return []
 
 def get_popular():
-    global use_cache
-    global data_cache
     cookies, success = bt_login()
     if success:
         if use_cache:
@@ -528,8 +518,6 @@ def get_popular():
     return []
 
 def get_trending():
-    global use_cache
-    global data_cache
     cookies, success = bt_login()
     if success:
         if use_cache:
@@ -540,8 +528,6 @@ def get_trending():
     return []
 
 def get_feed():
-    global use_cache
-    global data_cache
     cookies, success = bt_login()
     if success:
         if xbmcaddon.Addon().getSettingBool("legacy_feed_behavior"):
@@ -556,8 +542,6 @@ def get_feed():
     return []
 
 def search(search_for):
-    global use_cache
-    global data_cache
     cookies, success = bt_login()
     if success:
         if use_cache:
@@ -568,8 +552,6 @@ def search(search_for):
     return []
 
 def get_recently_active():
-    global use_cache
-    global data_cache
     cookies, success = bt_login()
     if success:
         if use_cache:
@@ -580,8 +562,6 @@ def get_recently_active():
     return []
 
 def get_video(video_id):
-    global use_video_cache
-    global video_cache
     success = True
     if success:
         if use_video_cache:
