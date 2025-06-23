@@ -25,7 +25,9 @@
             <icon>resources/icon.png</icon>
             <fanart>resources/fanart.jpg</fanart>
         </assets>
-		<news>v2.4.0 (06/22/25)
+		<news>v2.4.1 (06/22/25)
+[fix] Don't clear video cache on login fail.
+v2.4.0 (06/22/25)
 [fix] Bug #19 - Subscription page not sorted
 [fix] Some icon/fanart display fixes
 [feature] Feature #26 - Add next page to search

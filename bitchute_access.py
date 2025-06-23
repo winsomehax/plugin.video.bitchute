@@ -108,7 +108,7 @@ def bt_login(show_dialog=True):
     pickled_cookies, success = login_cache.cacheFunction(BitchuteLogin, username, password)
 
     if not success:
-        clear_cache()
+        clear_cache(login=True, data=True, video=False)
         if show_dialog:
             q = Dialog()
             q.ok("Login failed", "Unable to login to Bitchute with the details provided")
@@ -524,7 +524,12 @@ def get_recently_active():
 def get_video(video_id):
     return get_page(video_cache, False, _get_video, video_id)
 
-def clear_cache():
-    login_cache.delete('%')
-    data_cache.delete('%')
-    video_cache.delete('%')
+def clear_cache(login=True, data=True, video=True):
+    if login:
+        login_cache.delete('%')
+
+    if data:
+        data_cache.delete('%')
+
+    if video:
+        video_cache.delete('%')
