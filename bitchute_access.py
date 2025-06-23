@@ -329,7 +329,7 @@ def _get_channel(cookies, channel, page, max_count=100):
 
 def _get_feed_sub_legacy(params):
     (sub, cookies) = params
-    channel = pickle.loads(_get_channel(sub.channel, 0, cookies, max_count=1))
+    channel = pickle.loads(_get_channel(cookies, sub.channel, 0, max_count=1))
     feed_item = None
     if len(channel) > 0:
         chan = channel[0]  # The latest video
