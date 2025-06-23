@@ -122,16 +122,17 @@ def entries_to_listitems(entries, finalize_folder=True):
 def build_main_menu():
     global menu
     menu.start_folder()
-    menu.new_folder_item(item_name=loc(30022), description=loc(30023), iconURL=None, item_val=None, func=feed)
-    menu.new_folder_item(item_name=loc(30006), description=loc(30007), iconURL=None, item_val=None, func=subscriptions)
-    menu.new_folder_item(item_name=loc(30010), description=loc(30011), iconURL=None, item_val=None, func=notifications)
-    menu.new_folder_item(item_name=loc(30018), description=loc(30019), iconURL=None, item_val=None, func=popular)
-    menu.new_folder_item(item_name=loc(30020), description=loc(30021), iconURL=None, item_val=None, func=trending)
-    menu.new_folder_item(item_name=loc(30012), description=loc(30013), iconURL=None, item_val=None, func=favourites)
-    menu.new_folder_item(item_name=loc(30014), description=loc(30015), iconURL=None, item_val=None, func=watch_later)
-    menu.new_folder_item(item_name=loc(30008), description=loc(30009), iconURL=None, item_val=None, func=search)
-    menu.new_folder_item(item_name=loc(30004), description=loc(30005), iconURL=None, item_val=None, func=open_settings)
-    menu.new_folder_item(item_name=loc(30024), description=loc(30025), iconURL=None, item_val=None, func=video_by_id)
+    iconURL = 'special://home/addons/plugin.video.bitchute/resources/icon.png'
+    menu.new_folder_item(item_name=loc(30022), description=loc(30023), iconURL=iconURL, item_val=None, func=feed)
+    menu.new_folder_item(item_name=loc(30006), description=loc(30007), iconURL=iconURL, item_val=None, func=subscriptions)
+    menu.new_folder_item(item_name=loc(30010), description=loc(30011), iconURL=iconURL, item_val=None, func=notifications)
+    menu.new_folder_item(item_name=loc(30018), description=loc(30019), iconURL=iconURL, item_val=None, func=popular)
+    menu.new_folder_item(item_name=loc(30020), description=loc(30021), iconURL=iconURL, item_val=None, func=trending)
+    menu.new_folder_item(item_name=loc(30012), description=loc(30013), iconURL=iconURL, item_val=None, func=favourites)
+    menu.new_folder_item(item_name=loc(30014), description=loc(30015), iconURL=iconURL, item_val=None, func=watch_later)
+    menu.new_folder_item(item_name=loc(30008), description=loc(30009), iconURL=iconURL, item_val=None, func=search)
+    menu.new_folder_item(item_name=loc(30004), description=loc(30005), iconURL=iconURL, item_val=None, func=open_settings)
+    menu.new_folder_item(item_name=loc(30024), description=loc(30025), iconURL=iconURL, item_val=None, func=video_by_id)
     menu.end_folder()
 
 def build_subscriptions():

@@ -23,7 +23,7 @@ class KODIMenu():
         li.setProperty('IsPlayable', 'True')
         li.getVideoInfoTag().setPlot(description)
         li.setArt({'icon': iconURL, 'poster': iconURL,
-                   'thumb': iconURL, 'banner': iconURL})
+                   'thumb': iconURL, 'banner': iconURL, 'fanart': iconURL})
 
         addDirectoryItem(self.h, url, listitem=li, isFolder=False)
 
