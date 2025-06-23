@@ -13,7 +13,7 @@ from cache import data_cache, login_cache, video_cache
 USER_AGENT = "Bitchute Kodi-Addon/1"
 REQUEST_TIMEOUT = 15
 addon = xbmcaddon.Addon()
-use_cache = True
+use_data_cache = True
 use_video_cache = True
 thread_pool_workers = 8
 
@@ -278,7 +278,7 @@ def _get_playlist(cookies, playlist_name):
 
     return pickle.dumps(playlist)
 
-def _get_channel(channel, page, cookies, max_count=100):
+def _get_channel(cookies, channel, page, max_count=100):
     offset = page*25
     referer = "https://old.bitchute.com/channel/"
     url = "https://old.bitchute.com/channel/"+channel+"/extend/"
@@ -374,9 +374,9 @@ def _get_recently_active(cookies):
     return pickle.dumps(subs)
 
 
-def _get_video(video_id):
+def _get_video(cookies, video_id):
     url = f'https://old.bitchute.com/api/beta9/embed/{video_id}/'
-    resp = _get(url)
+    resp = _get(url, cookies=cookies)
     backoff = 1
     while resp.status_code == 429: # rate limited
         if backoff > 128:
@@ -466,107 +466,54 @@ def _search(cookies, query, page):
 
 # Wrappers to ensure the subs, notifications, playlists are cached for 15 minutes
 
-def get_subscriptions():
+def get_page(cache, funct, *args):
     cookies, success = bt_login()
+
     if success:
-        if use_cache:
-            return pickle.loads(data_cache.cacheFunction(_get_subscriptions, cookies))
+        if cache == data_cache:
+            use_cache = use_data_cache
+        elif cache == video_cache:
+            use_cache = use_video_cache
         else:
-            return pickle.loads(_get_subscriptions(cookies))
+            use_cache = True
+
+        if use_cache:
+            return pickle.loads(cache.cacheFunction(funct, cookies, *args))
+        else:
+            return pickle.loads(funct(cookies, *args))
 
     return []
+
+def get_subscriptions():
+    return get_page(data_cache, _get_subscriptions)
 
 def get_notifications():
-    cookies, success = bt_login()
-    if success:
-        if use_cache:
-            return pickle.loads(data_cache.cacheFunction(_get_notifications, cookies))
-        else:
-            return pickle.loads(_get_notifications(cookies))
-
-    return []
+    return get_page(data_cache, _get_notifications)
 
 def get_playlist(playlist):
-    cookies, success = bt_login()
-    if success:
-        if use_cache:
-            return pickle.loads(data_cache.cacheFunction(_get_playlist, cookies, playlist))
-        else:
-            return pickle.loads(_get_playlist(cookies, playlist))
-
-    return []
+    return get_page(data_cache, _get_playlist, playlist)
 
 def get_channel(channel, page, max_count=100):
-    cookies, success = bt_login()
-    if success:
-        if use_cache:
-            res = data_cache.cacheFunction(_get_channel, channel, page, cookies, max_count)
-        else:
-            res = _get_channel(channel, page, cookies, max_count)
-        return pickle.loads(res)
-
-    return []
+    return get_page(data_cache, _get_channel, channel, page, max_count)
 
 def get_popular():
-    cookies, success = bt_login()
-    if success:
-        if use_cache:
-            return pickle.loads(data_cache.cacheFunction(_get_popular, cookies))
-        else:
-            return pickle.loads(_get_popular(cookies))
-
-    return []
+    return get_page(data_cache, _get_popular)
 
 def get_trending():
-    cookies, success = bt_login()
-    if success:
-        if use_cache:
-            return pickle.loads(data_cache.cacheFunction(_get_trending, cookies))
-        else:
-            return pickle.loads(_get_trending(cookies))
-
-    return []
+    return get_page(data_cache, _get_trending)
 
 def get_feed():
-    cookies, success = bt_login()
-    if success:
-        if xbmcaddon.Addon().getSettingBool("legacy_feed_behavior"):
-            get_feed_func = _get_feed_legacy
-        else:
-            get_feed_func = _get_feed
-        if use_cache:
-            return pickle.loads(data_cache.cacheFunction(get_feed_func, cookies))
-        else:
-            return pickle.loads(_get_feed(cookies))
-
-    return []
+    if xbmcaddon.Addon().getSettingBool("legacy_feed_behavior"):
+        get_feed_func = _get_feed_legacy
+    else:
+        get_feed_func = _get_feed
+    return get_page(data_cache, get_feed_func)
 
 def search(query, page):
-    cookies, success = bt_login()
-    if success:
-        if use_cache:
-            return pickle.loads(data_cache.cacheFunction(_search, cookies, query, page))
-        else:
-            return pickle.loads(_search(cookies, query, page))
-
-    return []
+    return get_page(data_cache, _search, query, page)
 
 def get_recently_active():
-    cookies, success = bt_login()
-    if success:
-        if use_cache:
-            return pickle.loads(data_cache.cacheFunction(_get_recently_active, cookies))
-        else:
-            return pickle.loads(_get_recently_active(cookies))
-
-    return []
+    return get_page(data_cache, _get_recently_active)
 
 def get_video(video_id):
-    success = True
-    if success:
-        if use_video_cache:
-            return pickle.loads(video_cache.cacheFunction(_get_video, video_id))
-        else:
-            return pickle.loads(_get_video(video_id))
-
-    return []
+    return get_page(video_cache, _get_video, video_id)
