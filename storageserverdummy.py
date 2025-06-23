@@ -38,3 +38,6 @@ class StorageServer:
 
     def unlock(self, name):
         return False
+
+    def delete(self, s):
+        return

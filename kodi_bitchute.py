@@ -89,6 +89,10 @@ def search_pager(query, page):
                              None, search_pager, query=query, page=page+1) # Next page
     menu.end_folder()
 
+@plugin.route('/clear_cache')
+def clear_cache():
+    bitchute_access.clear_cache()
+
 def loc(label):
     return(xbmcaddon.Addon().getLocalizedString(label))
 

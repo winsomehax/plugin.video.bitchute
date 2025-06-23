@@ -108,8 +108,7 @@ def bt_login():
     pickled_cookies, success = login_cache.cacheFunction(BitchuteLogin, username, password)
 
     if not success:
-        login_cache.delete('%')
-        data_cache.delete('%')   # clear out the login/data caches
+        clear_cache()
         q = Dialog()
         q.ok("Login failed", "Unable to login to Bitchute with the details provided")
 
@@ -468,8 +467,12 @@ def _search(cookies, query, page):
 
 # Wrappers to ensure the subs, notifications, playlists are cached for 15 minutes
 
-def get_page(cache, funct, *args):
-    cookies, success = bt_login()
+def get_page(cache, login, funct, *args):
+    if login:
+        cookies, success = bt_login()
+    else:
+        cookies = []
+        success = True
 
     if success:
         if cache == data_cache:
@@ -487,35 +490,40 @@ def get_page(cache, funct, *args):
     return []
 
 def get_subscriptions():
-    return get_page(data_cache, _get_subscriptions)
+    return get_page(data_cache, True, _get_subscriptions)
 
 def get_notifications():
-    return get_page(data_cache, _get_notifications)
+    return get_page(data_cache, True, _get_notifications)
 
 def get_playlist(playlist):
-    return get_page(data_cache, _get_playlist, playlist)
+    return get_page(data_cache, True, _get_playlist, playlist)
 
 def get_channel(channel, page, max_count=100):
-    return get_page(data_cache, _get_channel, channel, page, max_count)
+    return get_page(data_cache, True, _get_channel, channel, page, max_count)
 
 def get_popular():
-    return get_page(data_cache, _get_popular)
+    return get_page(data_cache, True, _get_popular)
 
 def get_trending():
-    return get_page(data_cache, _get_trending)
+    return get_page(data_cache, True, _get_trending)
 
 def get_feed():
     if xbmcaddon.Addon().getSettingBool("legacy_feed_behavior"):
         get_feed_func = _get_feed_legacy
     else:
         get_feed_func = _get_feed
-    return get_page(data_cache, get_feed_func)
+    return get_page(data_cache, True, get_feed_func)
 
 def search(query, page):
-    return get_page(data_cache, _search, query, page)
+    return get_page(data_cache, True, _search, query, page)
 
 def get_recently_active():
-    return get_page(data_cache, _get_recently_active)
+    return get_page(data_cache, True, _get_recently_active)
 
 def get_video(video_id):
-    return get_page(video_cache, _get_video, video_id)
+    return get_page(video_cache, False, _get_video, video_id)
+
+def clear_cache():
+    login_cache.delete('%')
+    data_cache.delete('%')
+    video_cache.delete('%')

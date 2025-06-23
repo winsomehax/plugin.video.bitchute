@@ -39,6 +39,18 @@
 					<default>false</default>
 					<control type="toggle"/>
 				</setting>
+				<setting id="enable_cache" label="30036" type="boolean" help="Use legacy feed behavior">
+					<level>3</level>
+					<default>true</default>
+					<control type="toggle"/>
+				</setting>
+				<setting id="clear_cache" type="action" label="30037" help="Clear cache.">
+					<level>3</level>
+					<data>RunPlugin(plugin://plugin.video.bitchute/clear_cache)</data>
+					<control type="button" format="action">
+						<close>true</close>
+					</control>
+				</setting>
 			</group>
 		</category>
 	</section>
