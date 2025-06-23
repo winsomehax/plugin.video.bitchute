@@ -101,7 +101,7 @@ def BitchuteLogin(username, password):
     # the cookies object has to be pickled or Kodi's cache will never recognise it as cache and keep refreshing it
     return pickle.dumps(csrfJar), logged_in
 
-def bt_login():
+def bt_login(show_dialog=True):
     global login_cache
     username = xbmcaddon.Addon().getSetting("user")
     password = xbmcaddon.Addon().getSetting("password")
@@ -109,8 +109,9 @@ def bt_login():
 
     if not success:
         clear_cache()
-        q = Dialog()
-        q.ok("Login failed", "Unable to login to Bitchute with the details provided")
+        if show_dialog:
+            q = Dialog()
+            q.ok("Login failed", "Unable to login to Bitchute with the details provided")
 
         return [], False
 

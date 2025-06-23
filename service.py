@@ -13,7 +13,7 @@ if __name__ == '__main__':
     while not monitor.abortRequested():
         try:
             if addon.getSettingBool('precache_video_links'):
-                cookies, success = bitchute_access.bt_login()
+                cookies, success = bitchute_access.bt_login(False)
                 if success:
                     # Refresh the video cache to speed up common
                     xbmc.log("Pre-caching get_feed()")
