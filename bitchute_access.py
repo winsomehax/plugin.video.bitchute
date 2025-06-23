@@ -153,6 +153,8 @@ def _get_subscriptions(cookies):
         for sub in containers:
             subs.append(_process_subscription(sub))
 
+    subs.sort(key=lambda sub: sub.name)
+
     return pickle.dumps(subs)
 
 def _get_notifications(cookies):
