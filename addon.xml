@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.bitchute" name="bitchute" version="2.3.2" provider-name="MasterSlave">
+<addon id="plugin.video.bitchute" name="bitchute" version="2.4.0" provider-name="MasterSlave">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.routing" version="0.2.0"/>
@@ -25,7 +25,13 @@
             <icon>resources/icon.png</icon>
             <fanart>resources/fanart.jpg</fanart>
         </assets>
-		<news>v1.3.2
+		<news>v2.4.0 (06/22/25)
+[fix] Bug #19 - Subscription page not sorted
+[fix] Some icon/fanart display fixes
+[feature] Feature #26 - Add next page to search
+[feature] Feature #25 - Replace ad-hoc feed page with the Bitchute.com feed page
+[fix] Bug #20 - Fix deprecation warnings in log
+[fix] Bug #21 - Update addon.xml to reflect new maintainer
 [fix] Bug #18 - Doesn't play next video
 		</news>
     </extension>
