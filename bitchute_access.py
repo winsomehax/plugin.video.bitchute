@@ -4,7 +4,6 @@ import pickle
 import requests
 import xbmcaddon
 from bs4 import BeautifulSoup
-from concurrent.futures import ThreadPoolExecutor
 from xbmcgui import Dialog
 import xbmc
 
@@ -13,7 +12,6 @@ from cache import data_cache, login_cache
 USER_AGENT = "Bitchute Kodi-Addon/1"
 REQUEST_TIMEOUT = 15
 addon = xbmcaddon.Addon()
-thread_pool_workers = 8
 
 class Subscription():
     def __init__(self, name, channel, description, channel_image):
@@ -118,21 +116,6 @@ def bt_login(show_dialog=True):
     cookies = pickle.loads(pickled_cookies)
     return cookies, True
 
-def _process_subscription(sub):
-    try:
-        channel = sub.find("a").attrs["href"].split("/")[1]
-        channel_image = sub.find("a").find("img").attrs["data-src"]
-        name = sub.find(class_="subscription-name").get_text()
-        channel = sub.find(class_="spa").attrs["href"].replace("/channel/", "")
-        description = sub.find(class_="subscription-description-text").get_text()
-    except AttributeError as e:
-        xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
-        xbmc.log(str(sub))
-        name = description = channel = channel_image = "ERROR PARSING"
-
-    return Subscription(name=name, channel=channel,
-                     description=description, channel_image=channel_image)
-
 def _get_subscriptions(cookies):
     url = "https://old.bitchute.com/subscriptions/"
     resp = _get(url, cookies=cookies)
@@ -141,19 +124,22 @@ def _get_subscriptions(cookies):
     containers = soup.find_all(class_="subscription-container")
 
     subs = []
-    threaded = True
-    if threaded:
+    for sub in containers:
         try:
-            with ThreadPoolExecutor(thread_pool_workers) as p:
-                subs = list(p.map(_process_subscription, containers))
-        except:
-            threaded = False
+            channel = sub.find("a").attrs["href"].split("/")[1]
+            channel_image = sub.find("a").find("img").attrs["data-src"]
+            name = sub.find(class_="subscription-name").get_text()
+            channel = sub.find(class_="spa").attrs["href"].replace("/channel/", "")
+            description = sub.find(class_="subscription-description-text").get_text()
 
-    if not threaded:
-        for sub in containers:
-            subs.append(_process_subscription(sub))
+            sub = Subscription(name=name, channel=channel,
+                             description=description, channel_image=channel_image)
+            subs.append(sub)
+        except AttributeError as e:
+            xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
+            xbmc.log(str(n))
 
-    subs.sort(key=lambda sub: sub.name)
+    subs.sort(key=lambda sub: str.lower(sub.name))
 
     return pickle.dumps(subs)
 
@@ -170,13 +156,12 @@ def _get_notifications(cookies):
             video_id = n.find(class_="notification-view").attrs["href"].split("/")[2]
             title = n.find(class_="notification-target").get_text()
             description = n.find(class_="notification-detail").get_text()
+
+            notif = NotificationEntry(video_id=video_id, title=title, description=description)
+            notifs.append(notif)
         except AttributeError as e:
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
             xbmc.log(str(n))
-            video_id = title = description = "ERROR PARSING"
-
-        notif = NotificationEntry(video_id=video_id, title=title, description=description)
-        notifs.append(notif)
 
     return pickle.dumps(notifs)
 
@@ -265,15 +250,13 @@ def _get_playlist(cookies, playlist_name):
             poster = n.find(class_="image-container").find("img").attrs['data-src']
             duration = n.find(class_="video-duration").get_text()
             date= n.find(class_="details").find("span").get_text()
+            s = PlaylistEntry(video_id=video_id, description=description, title=title,
+                              channel_name=channel_name, duration=duration, date=date, poster=poster)
+            playlist.append(s)
 
         except AttributeError as e:
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
             xbmc.log(str(n))
-            channel_name = video_id = title = description = poster = duration = date = "ERROR PARSING"
-
-        s = PlaylistEntry(video_id=video_id, description=description, title=title,
-                          channel_name=channel_name, duration=duration, date=date, poster=poster)
-        playlist.append(s)
 
     return pickle.dumps(playlist)
 
@@ -309,16 +292,14 @@ def _get_channel(cookies, channel, page, max_count=100):
             description = n.find(class_="channel-videos-text").find("p").get_text()
             poster = n.find(class_="channel-videos-image").find("img").attrs['data-src']
 
+            s = ChannelEntry(video_id=video_id, description=description, title=title,
+                             channel_name=channel, date=date, duration=duration, poster=poster)
+            videos.append(s)
+
         except AttributeError as e:
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
             xbmc.log(str(n))
-            video_id = title = description = poster = "ERROR PARSING"
-            date = ""
-            duration = ""
 
-        s = ChannelEntry(video_id=video_id, description=description, title=title,
-                         channel_name=channel, date=date, duration=duration, poster=poster)
-        videos.append(s)
         count = count + 1
 
     return pickle.dumps(videos)
@@ -360,14 +341,13 @@ def _get_recently_active(cookies):
             channel = n.find("a").attrs["href"].replace("/channel/", "")
             name = n.find(class_="channel-card-title").get_text()
 
+            s = Subscription(name=name, channel=channel, description="",
+                             channel_image=channel_image)
+            subs.append(s)
+
         except AttributeError as e:
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
             xbmc.log(str(n))
-            channel_image = channel = name = "ERROR PARSING"
-
-        s = Subscription(name=name, channel=channel, description="", 
-                         channel_image=channel_image)
-        subs.append(s)
 
     return pickle.dumps(subs)
 
