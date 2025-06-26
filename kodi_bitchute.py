@@ -9,6 +9,8 @@ import bitchute_access
 
 plugin = routing.Plugin()
 menu = kodi_menu.KODIMenu(plugin)
+addon = xbmcaddon.Addon()
+iconURL = 'special://home/addons/plugin.video.bitchute/resources/icon.png'
 
 @plugin.route('/')
 def index():
@@ -106,19 +108,22 @@ def entries_to_listitems(entries, finalize_folder=True):
     else:
         for n in entries:
             description = ""
+            poster = iconURL
             if not isinstance(n, bitchute_access.NotificationEntry):
                 description += "[B]" + n.channel_name + "[/B]\n"
                 if not isinstance(n, bitchute_access.SearchEntry):
                     description += "Date: " + n.date + "\n"
                     description += "Duration: "+n.duration+"\n"
+                poster = n.poster
 
             if description != "":
                 description += "\n"
 
             description += n.description
 
-            menu.new_video_item(item_name=n.title, url=n.video.video_url,
-                                description=description, iconURL=n.video.poster)
+            video_url = "http://127.0.0.1:" + addon.getSetting('proxy_port') + "/" + n.video_id
+            menu.new_video_item(item_name=n.title, url=video_url,
+                                description=description, iconURL=poster)
 
     if finalize_folder:
         menu.end_folder()
@@ -126,7 +131,6 @@ def entries_to_listitems(entries, finalize_folder=True):
 def build_main_menu():
     global menu
     menu.start_folder()
-    iconURL = 'special://home/addons/plugin.video.bitchute/resources/icon.png'
     menu.new_folder_item(item_name=loc(30022), description=loc(30023), iconURL=iconURL, item_val=None, func=feed)
     menu.new_folder_item(item_name=loc(30006), description=loc(30007), iconURL=iconURL, item_val=None, func=subscriptions)
     menu.new_folder_item(item_name=loc(30010), description=loc(30011), iconURL=iconURL, item_val=None, func=notifications)
@@ -185,7 +189,7 @@ def build_trending():
 def play_video(video_id):
     global menu
     v = bitchute_access.get_video(video_id)
-    menu.play_now(v.videoURL)
+    menu.play_now(v.video_url)
 
 def build_open_settings():
     xbmcaddon.Addon().openSettings()

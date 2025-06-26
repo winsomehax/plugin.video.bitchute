@@ -11,5 +11,3 @@ login_cache = StorageServer.StorageServer(
     "bitchute_logindetails"+version, 24)  # refresh login per day (24hrs)
 data_cache = StorageServer.StorageServer(
     "bitchute_data"+version, 0.25)  # reloads subs per 15m
-video_cache = StorageServer.StorageServer(
-    "bitchute_data"+version, 7*24)

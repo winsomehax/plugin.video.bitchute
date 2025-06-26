@@ -8,13 +8,11 @@ from concurrent.futures import ThreadPoolExecutor
 from xbmcgui import Dialog
 import xbmc
 
-from cache import data_cache, login_cache, video_cache
+from cache import data_cache, login_cache
 
 USER_AGENT = "Bitchute Kodi-Addon/1"
 REQUEST_TIMEOUT = 15
 addon = xbmcaddon.Addon()
-use_data_cache = True
-use_video_cache = True
 thread_pool_workers = 8
 
 class Subscription():
@@ -32,36 +30,38 @@ class Video():
         self.title = title
 
 class NotificationEntry():
-    def __init__(self, video, title, description):
-        self.video = video
+    def __init__(self, video_id, title, description):
+        self.video_id = video_id
         self.title = title
         self.description = description
 
 class SearchEntry():
-    def __init__(self, video, description, title, poster, channel_name):
-        self.video = video
+    def __init__(self, video_id, description, title, poster, channel_name):
+        self.video_id = video_id
         self.title = title
         self.description = description
         self.poster = poster
         self.channel_name = channel_name
 
 class ChannelEntry():
-    def __init__(self, video, title, description, channel_name=u"", date=0, duration=0):
-        self.video = video
+    def __init__(self, video_id, title, description, channel_name=u"", date=0, duration=0, poster=""):
+        self.video_id = video_id
         self.title = title
         self.description = description
         self.channel_name = channel_name
-        self.date=date
-        self.duration=duration
+        self.date = date
+        self.duration = duration
+        self.poster = poster
 
 class PlaylistEntry():
-    def __init__(self, video, description, title, channel_name=u"", duration=u"", date=u""):
-        self.video = video
+    def __init__(self, video_id, description, title, channel_name=u"", duration=u"", date=u"", poster=""):
+        self.video_id = video_id
         self.title = title
         self.description = description
         self.channel_name = channel_name
-        self.date=date
-        self.duration=duration
+        self.date = date
+        self.duration = duration
+        self.poster = poster
 
 DEFAULT_HEADERS = {"User-Agent": USER_AGENT}
 
@@ -108,7 +108,7 @@ def bt_login(show_dialog=True):
     pickled_cookies, success = login_cache.cacheFunction(BitchuteLogin, username, password)
 
     if not success:
-        clear_cache(login=True, data=True, video=False)
+        clear_cache(login=True, data=True)
         if show_dialog:
             q = Dialog()
             q.ok("Login failed", "Unable to login to Bitchute with the details provided")
@@ -175,8 +175,7 @@ def _get_notifications(cookies):
             xbmc.log(str(n))
             video_id = title = description = "ERROR PARSING"
 
-        video = get_video(video_id)
-        notif = NotificationEntry(video=video, title=title, description=description)
+        notif = NotificationEntry(video_id=video_id, title=title, description=description)
         notifs.append(notif)
 
     return pickle.dumps(notifs)
@@ -202,9 +201,8 @@ def _build_playlist_common(listing_id, cookies):
             duration = n.find(class_="video-duration").get_text()
             date = n.find(class_="video-card-published").get_text()
 
-            video = get_video(video_id)
-            s = PlaylistEntry(video=video, description=description, title=title, 
-                              channel_name=channel_name, date=date, duration=duration)
+            s = PlaylistEntry(video_id=video_id, description=description, title=title,
+                              channel_name=channel_name, date=date, duration=duration, poster=poster)
             playlist.append(s)
 
         except AttributeError as e:
@@ -239,9 +237,8 @@ def _get_trending(cookies):
             duration = n.find(class_="video-duration").get_text()
             date = n.find(class_="video-result-details").find("span").get_text()
 
-            video = get_video(video_id)
-            s = PlaylistEntry(video=video, description=description, title=title, 
-                              channel_name=channel_name, date=date, duration=duration)
+            s = PlaylistEntry(video_id=video_id, description=description, title=title,
+                              channel_name=channel_name, date=date, duration=duration, poster=poster)
             playlist.append(s)
 
         except AttributeError as e:
@@ -274,8 +271,8 @@ def _get_playlist(cookies, playlist_name):
             xbmc.log(str(n))
             channel_name = video_id = title = description = poster = duration = date = "ERROR PARSING"
 
-        video = get_video(video_id)
-        s = PlaylistEntry(video=video, description=description, title=title, channel_name=channel_name, duration=duration, date=date)
+        s = PlaylistEntry(video_id=video_id, description=description, title=title,
+                          channel_name=channel_name, duration=duration, date=date, poster=poster)
         playlist.append(s)
 
     return pickle.dumps(playlist)
@@ -319,9 +316,8 @@ def _get_channel(cookies, channel, page, max_count=100):
             date = ""
             duration = ""
 
-        video = get_video(video_id)
-        s = ChannelEntry(video=video, description=description,
-                         title=title, channel_name=channel, date=date, duration=duration)
+        s = ChannelEntry(video_id=video_id, description=description, title=title,
+                         channel_name=channel, date=date, duration=duration, poster=poster)
         videos.append(s)
         count = count + 1
 
@@ -459,8 +455,7 @@ def _search(cookies, query, page):
         description = result["description"].lstrip().rstrip().replace('<p>','').replace('</p>','')
         channel_name = result["channel_name"]
         poster = result["images"]["thumbnail"]
-        video = get_video(video_id)
-        r = SearchEntry(video=video, title=title, description=description,
+        r = SearchEntry(video_id=video_id, title=title, description=description,
                         channel_name=channel_name, poster=poster)
         results.append(r)
 
@@ -468,7 +463,7 @@ def _search(cookies, query, page):
 
 # Wrappers to ensure the subs, notifications, playlists are cached for 15 minutes
 
-def get_page(cache, login, funct, *args):
+def get_page(login, funct, *args):
     if login:
         cookies, success = bt_login()
     else:
@@ -476,60 +471,50 @@ def get_page(cache, login, funct, *args):
         success = True
 
     if success:
-        if cache == data_cache:
-            use_cache = use_data_cache
-        elif cache == video_cache:
-            use_cache = use_video_cache
-        else:
-            use_cache = True
-
-        if use_cache:
-            return pickle.loads(cache.cacheFunction(funct, cookies, *args))
+        if addon.getSettingBool("enable_cache"):
+            return pickle.loads(data_cache.cacheFunction(funct, cookies, *args))
         else:
             return pickle.loads(funct(cookies, *args))
 
     return []
 
 def get_subscriptions():
-    return get_page(data_cache, True, _get_subscriptions)
+    return get_page(True, _get_subscriptions)
 
 def get_notifications():
-    return get_page(data_cache, True, _get_notifications)
+    return get_page(True, _get_notifications)
 
 def get_playlist(playlist):
-    return get_page(data_cache, True, _get_playlist, playlist)
+    return get_page(True, _get_playlist, playlist)
 
 def get_channel(channel, page, max_count=100):
-    return get_page(data_cache, True, _get_channel, channel, page, max_count)
+    return get_page(True, _get_channel, channel, page, max_count)
 
 def get_popular():
-    return get_page(data_cache, True, _get_popular)
+    return get_page(True, _get_popular)
 
 def get_trending():
-    return get_page(data_cache, True, _get_trending)
+    return get_page(True, _get_trending)
 
 def get_feed():
     if xbmcaddon.Addon().getSettingBool("legacy_feed_behavior"):
         get_feed_func = _get_feed_legacy
     else:
         get_feed_func = _get_feed
-    return get_page(data_cache, True, get_feed_func)
+    return get_page(True, get_feed_func)
 
 def search(query, page):
-    return get_page(data_cache, True, _search, query, page)
+    return get_page(True, _search, query, page)
 
 def get_recently_active():
-    return get_page(data_cache, True, _get_recently_active)
+    return get_page(True, _get_recently_active)
 
 def get_video(video_id):
-    return get_page(video_cache, False, _get_video, video_id)
+    return pickle.loads(_get_video([], video_id))
 
-def clear_cache(login=True, data=True, video=True):
+def clear_cache(login=True, data=True):
     if login:
         login_cache.delete('%')
 
     if data:
         data_cache.delete('%')
-
-    if video:
-        video_cache.delete('%')

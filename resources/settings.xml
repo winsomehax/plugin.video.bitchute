@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings version="1">
     <section id="plugin.video.bitchute">
-		<category id="general" label="30032">
+		<category id="general" label="30032" description="General settings">
 			<group id="main_group">
 				<setting id="user" type="string" label="30002" help="Bitchute login id.">
 					<level>0</level>
@@ -23,11 +23,6 @@
 						<heading>30003</heading>
 						<hidden>true</hidden>
 					</control>
-				</setting>
-				<setting id="precache_video_links" label="30031" type="boolean" help="Pre-cache video links in the background to speed-up performance.">
-					<level>1</level>
-					<default>true</default>
-					<control type="toggle"/>
 				</setting>
 				<setting id="high_resolution_thumbnails" label="30033" type="boolean" help="Use 640x320 thumbnails rather than 320x180">
 					<level>3</level>
@@ -51,6 +46,16 @@
 						<close>true</close>
 					</control>
 				</setting>
+                <setting id="proxy_port" type="integer" label="30038" help="Proxy port on localhost.">
+                    <level>3</level>
+                    <default>1488</default>
+                    <control type="edit" format="integer">
+                    </control>
+					<constraints>
+						<minimum>1024</minimum>
+						<maximum>65535</maximum>
+					</constraints>
+                </setting>
 			</group>
 		</category>
 	</section>

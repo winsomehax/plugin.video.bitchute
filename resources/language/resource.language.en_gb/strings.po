@@ -128,10 +128,6 @@ msgctxt "#30030"
 msgid "Enter the video ID"
 msgstr ""
 
-msgctxt "#30031"
-msgid "Pre-cache video links"
-msgstr ""
-
 msgctxt "#30032"
 msgid "General"
 msgstr ""
@@ -154,4 +150,8 @@ msgstr ""
 
 msgctxt "#30037"
 msgid "Clear cache"
+msgstr ""
+
+msgctxt "#30038"
+msgid "Video resolver port"
 msgstr ""
