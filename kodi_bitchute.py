@@ -107,15 +107,24 @@ def entries_to_listitems(entries, finalize_folder=True):
         menu.new_info_item(loc(30028))
     else:
         for n in entries:
+            duration = None
             description = ""
             poster = iconURL
             if not isinstance(n, bitchute_access.NotificationEntry):
                 description += "[B]" + n.channel_name + "[/B]\n"
                 if not isinstance(n, bitchute_access.SearchEntry):
                     description += "Date: " + n.date + "\n"
-                    description += "Duration: "+n.duration+"\n"
-                poster = n.poster
 
+                    d = 0
+                    m = 1
+                    toks = n.duration.split(":")
+                    ntoks = len(toks)
+                    for i in range(ntoks):
+                        d = d + m*int(toks[ntoks-i-1])
+                        m = m*60
+                    duration = d
+
+                poster = n.poster
             if description != "":
                 description += "\n"
 
@@ -123,7 +132,7 @@ def entries_to_listitems(entries, finalize_folder=True):
 
             video_url = "http://127.0.0.1:" + addon.getSetting('proxy_port') + "/" + n.video_id
             menu.new_video_item(item_name=n.title, url=video_url,
-                                description=description, iconURL=poster)
+                                description=description, iconURL=poster, duration=duration)
 
     if finalize_folder:
         menu.end_folder()

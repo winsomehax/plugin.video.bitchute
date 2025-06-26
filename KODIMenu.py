@@ -18,10 +18,16 @@ class KODIMenu():
         li.setProperty('IsPlayable', 'False')
         addDirectoryItem(self.h, "", listitem=li, isFolder=False)
 
-    def new_video_item(self, item_name, url, iconURL="", description=""):
+    def new_video_item(self, item_name, url, iconURL="", description="", date=None, duration=None):
         li = ListItem(label=item_name)
         li.setProperty('IsPlayable', 'True')
-        li.getVideoInfoTag().setPlot(description)
+        vit : xbmc.InfoTagVideo = li.getVideoInfoTag()
+        vit.setPlot(description)
+        vit.setMediaType('video')
+        if date:
+            vit.setPremiered(date)
+        if duration:
+            vit.setDuration(duration)
         li.setArt({'icon': iconURL, 'poster': iconURL,
                    'thumb': iconURL, 'banner': iconURL, 'fanart': iconURL})
 
@@ -34,7 +40,7 @@ class KODIMenu():
         li.setProperty('IsPlayable', 'True')
         li.getVideoInfoTag().setPlot(description)
         li.setArt({'icon': iconURL, 'poster': iconURL, 'thumb': iconURL,
-                   'banner': iconURL})
+                   'banner': iconURL, 'fanart' : iconURL})
         addDirectoryItem(self.h, self.plugin.url_for(func, **kwargs),
                          listitem=li, isFolder=True)
 
