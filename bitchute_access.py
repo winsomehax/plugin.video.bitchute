@@ -310,8 +310,8 @@ def _get_feed_sub_legacy(params):
     feed_item = None
     if len(channel) > 0:
         chan = channel[0]  # The latest video
-        feed_item = PlaylistEntry(video=chan.video, description=chan.description,
-                                  title=chan.title, channel_name=sub.name, date=chan.date, duration=chan.duration)
+        feed_item = PlaylistEntry(video_id=chan.video_id, description=chan.description,
+                                  title=chan.title, channel_name=sub.name, date=chan.date, duration=chan.duration, poster=chan.poster)
     return feed_item
 
 def _get_feed_legacy(cookies):
