@@ -18,7 +18,7 @@ class KODIMenu():
         li.setProperty('IsPlayable', 'False')
         addDirectoryItem(self.h, "", listitem=li, isFolder=False)
 
-    def new_video_item(self, item_name, url, iconURL="", description="", date=None, duration=None):
+    def new_video_item(self, item_name, url, iconURL="", description="", date=None, duration=None, context_menu=None):
         li = ListItem(label=item_name)
         li.setProperty('IsPlayable', 'True')
         vit : xbmc.InfoTagVideo = li.getVideoInfoTag()
@@ -30,6 +30,9 @@ class KODIMenu():
             vit.setDuration(duration)
         li.setArt({'icon': iconURL, 'poster': iconURL,
                    'thumb': iconURL, 'banner': iconURL, 'fanart': iconURL})
+
+        if context_menu:
+            li.addContextMenuItems(context_menu)
 
         addDirectoryItem(self.h, url, listitem=li, isFolder=False)
 

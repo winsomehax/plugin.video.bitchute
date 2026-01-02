@@ -6,6 +6,7 @@ from xbmcgui import Dialog, INPUT_ALPHANUM
 
 import KODIMenu as kodi_menu
 import bitchute_access
+from comment_window import CommentWindow
 
 plugin = routing.Plugin()
 menu = kodi_menu.KODIMenu(plugin)
@@ -95,6 +96,10 @@ def search_pager(query, page):
 def clear_cache():
     bitchute_access.clear_cache()
 
+@plugin.route('/comments/<video_id>')
+def comments(video_id):
+    w = CommentWindow(video_id=video_id)
+
 def loc(label):
     return(xbmcaddon.Addon().getLocalizedString(label))
 
@@ -131,8 +136,13 @@ def entries_to_listitems(entries, finalize_folder=True):
             description += n.description
 
             video_url = "http://127.0.0.1:" + addon.getSetting('proxy_port') + "/" + n.video_id
+
+            context_menu = []
+            context_menu.append((loc(30039), 'RunPlugin(%s)' % plugin.url_for(comments, video_id=n.video_id)))
+
             menu.new_video_item(item_name=n.title, url=video_url,
-                                description=description, iconURL=poster, duration=duration)
+                                description=description, iconURL=poster, duration=duration,
+                                context_menu=context_menu)
 
     if finalize_folder:
         menu.end_folder()

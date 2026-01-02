@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+	<defaultcontrol always="false">1</defaultcontrol>
+	<menucontrol>1</menucontrol>
+	<backgroundcolor>0</backgroundcolor>
+	<animation effect="fade" time="100">WindowOpen</animation>
+	<animation effect="fade" time="100">WindowClose</animation>
+	<zorder>1</zorder>
+	<coordinates>
+		<left>0</left>
+		<top>0</top>
+	</coordinates>
+	<controls>
+		<control type="image">
+			<width>1280</width>
+			<height>720</height>
+			<texture>comment-background.png</texture>
+			<aspectratio>stretch</aspectratio>
+		</control>
+		<control type="list" id="1">
+			<description>Comment list</description>
+			<left>2</left>
+			<top>2</top>
+			<visible>true</visible>
+			<viewtype label="Comments">list</viewtype>
+			<orientation>vertical</orientation>
+			<pagecontrol>25</pagecontrol>
+			<itemlayout height="28">
+				<control type="label">
+					<left>0</left>
+					<height>24</height>
+					<font>font14</font>
+					<aligny>center</aligny>
+					<textcolor>blue</textcolor>
+					<align>left</align>
+					<label>$INFO[ListItem.Label]</label>
+					<visible>String.IsEqual(ListItem.Property(indent),0)</visible>
+				</control>
+
+				<control type="label">
+					<left>24</left>
+					<height>24</height>
+					<font>font14</font>
+					<aligny>center</aligny>
+					<textcolor>blue</textcolor>
+					<align>left</align>
+					<label>$INFO[ListItem.Label]</label>
+					<visible>String.IsEqual(ListItem.Property(indent),1)</visible>
+				</control>
+
+				<control type="label">
+					<left>48</left>
+					<height>24</height>
+					<font>font14</font>
+					<aligny>center</aligny>
+					<textcolor>blue</textcolor>
+					<align>left</align>
+					<label>$INFO[ListItem.Label]</label>
+					<visible>String.IsEqual(ListItem.Property(indent),2)</visible>
+				</control>
+
+				<control type="label">
+					<left>72</left>
+					<height>24</height>
+					<font>font14</font>
+					<aligny>center</aligny>
+					<textcolor>blue</textcolor>
+					<align>left</align>
+					<label>$INFO[ListItem.Label]</label>
+					<visible>String.IsEqual(ListItem.Property(indent),3)</visible>
+				</control>
+
+				<control type="label">
+					<left>96</left>
+					<height>24</height>
+					<font>font14</font>
+					<aligny>center</aligny>
+					<textcolor>blue</textcolor>
+					<align>left</align>
+					<label>$INFO[ListItem.Label]</label>
+					<visible>String.IsEqual(ListItem.Property(indent),4)</visible>
+				</control>
+			</itemlayout>
+
+			<focusedlayout height="28">
+				<control type="label">
+					<left>0</left>
+					<height>24</height>
+					<font>font14</font>
+					<aligny>center</aligny>
+					<textcolor>red</textcolor>
+					<align>left</align>
+					<label>$INFO[ListItem.Label]</label>
+					<visible>String.IsEqual(ListItem.Property(indent),0)</visible>
+					<scroll>true</scroll>
+					<scrollspeed>250</scrollspeed>
+				</control>
+
+				<control type="label">
+					<left>24</left>
+					<height>24</height>
+					<font>font14</font>
+					<aligny>center</aligny>
+					<textcolor>red</textcolor>
+					<align>left</align>
+					<label>$INFO[ListItem.Label]</label>
+					<visible>String.IsEqual(ListItem.Property(indent),1)</visible>
+					<scroll>true</scroll>
+					<scrollspeed>250</scrollspeed>
+				</control>
+
+				<control type="label">
+					<left>48</left>
+					<height>24</height>
+					<font>font14</font>
+					<aligny>center</aligny>
+					<textcolor>red</textcolor>
+					<align>left</align>
+					<label>$INFO[ListItem.Label]</label>
+					<visible>String.IsEqual(ListItem.Property(indent),2)</visible>
+					<scroll>true</scroll>
+					<scrollspeed>250</scrollspeed>
+				</control>
+
+				<control type="label">
+					<left>72</left>
+					<height>24</height>
+					<font>font14</font>
+					<aligny>center</aligny>
+					<textcolor>red</textcolor>
+					<align>left</align>
+					<label>$INFO[ListItem.Label]</label>
+					<visible>String.IsEqual(ListItem.Property(indent),3)</visible>
+					<scroll>true</scroll>
+					<scrollspeed>250</scrollspeed>
+				</control>
+
+				<control type="label">
+					<left>96</left>
+					<height>24</height>
+					<font>font14</font>
+					<aligny>center</aligny>
+					<textcolor>red</textcolor>
+					<align>left</align>
+					<label>$INFO[ListItem.Label]</label>
+					<visible>String.IsEqual(ListItem.Property(indent),4)</visible>
+					<scroll>true</scroll>
+					<scrollspeed>250</scrollspeed>
+				</control>
+			</focusedlayout>
+		</control>
+	</controls>
+</window>

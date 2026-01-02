@@ -1,5 +1,9 @@
+import base64
+import datetime
 import json
 import pickle
+import re
+import time
 
 import requests
 import xbmcaddon
@@ -8,6 +12,7 @@ from xbmcgui import Dialog
 import xbmc
 
 from cache import data_cache, login_cache
+from comment_window import CommentWindow
 
 USER_AGENT = "Bitchute Kodi-Addon/1"
 REQUEST_TIMEOUT = 15
@@ -61,17 +66,30 @@ class PlaylistEntry():
         self.duration = duration
         self.poster = poster
 
+class CommentEntry():
+    def __init__(self, id, parent_id, creator, fullname, content, upvote_count, downvote_count, user_vote, profile_picture_url, created_by_current_user):
+        self.id = id
+        self.parent_id = parent_id
+        self.creator = creator
+        self.fullname = fullname
+        self.content = content
+        self.upvote_count = upvote_count
+        self.downvote_count = downvote_count
+        self.user_vote = 0 if user_vote == None else 1 if user_vote == True else -1
+        self.profile_picture_url = profile_picture_url
+        self.created_by_current_user = created_by_current_user
+
 DEFAULT_HEADERS = {"User-Agent": USER_AGENT}
 
 def _get(url, cookies=[], headers=DEFAULT_HEADERS):
-    xbmc.log("GET request: " + url)
     resp = requests.get(url, cookies=cookies, timeout=REQUEST_TIMEOUT, headers=headers)
+    xbmc.log(f"GET request: {url} ({resp.status_code})")
     return resp
 
 def _post(url, data, cookies=[], headers=DEFAULT_HEADERS):
-    xbmc.log("POST request: " + url)
     resp = requests.post(url, data=data, headers=headers, cookies=cookies,
                          timeout=REQUEST_TIMEOUT)
+    xbmc.log(f"POST request: {url} ({resp.status_code})")
     return resp
 
 def BitchuteLogin(username, password):
@@ -441,9 +459,214 @@ def _search(cookies, query, page):
 
     return pickle.dumps(results)
 
+# Equivalent to the EncodeCommentText() JS function used by Bitchute to encode text
+def custom_escape_and_b64encode(e):
+    # Equivalent to JSON.stringify(e)
+    n = json.dumps(e, ensure_ascii=False)
+    o = ""
+    for char in n:
+        # Equivalent to n.charCodeAt(i)
+        t = ord(char)
+        if t > 255:
+            # For characters > 255, use full Unicode escape (e.g., \\uXXXX)
+            o += "\\u" + format(t, '04x')
+        elif t >= 128 and t <= 255:
+            # For characters between 128 and 255, use \\u00XX format
+            o += "\\u00" + format(t, '02x')
+        else:
+            # For ASCII characters, keep them as is
+            o += char
+
+    # Equivalent to btoa(o)
+    # The intermediate string 'o' is treated as a binary string (bytes) for btoa
+    return base64.b64encode(o.encode('latin-1')).decode('utf-8')
+
+def create_timestamp():
+    timestamp = datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "")
+    return timestamp[:-3] + 'Z'
+
+def _get_comment_data(cookies, video_id):
+    url = f'https://old.bitchute.com/video/{video_id}/'
+    response = _get(url, cookies=cookies)
+    pattern = r"initComments\(\s*'https://commentfreely.bitchute.com'\s*,\s*'([^']+)',\s*'([^']+)'\s*,\s*'([^']+)'"
+    res = re.compile(pattern, re.DOTALL|re.IGNORECASE).findall(response.text)
+    return res[0] if res else None
+
+def _get_comments(cookies, video_id):
+    cd = _get_comment_data(cookies, video_id)
+    comments = []
+
+    if cd:
+        cf_auth = cd[0]
+        url = 'https://commentfreely.bitchute.com/api/get_comments/'
+        post_data = {
+                'cf_auth' : cf_auth,
+                'commentCount' : '0',
+                'isNameValuesArrays' : True
+                }
+        headers = {
+                'referer': "https://www.bitchute.com",
+                'origin': "https://www.bitchute.com/",
+                "User-Agent": USER_AGENT,
+                }
+        response = _post(url, data=post_data, headers=headers, cookies=cookies)
+        js = json.loads(response.text)
+        names = js['names']
+
+        id_idx = names.index('id')
+        parent_idx = names.index('parent')
+        creator_idx = names.index('creator')
+        fullname_idx = names.index('fullname')
+        content_idx = names.index('content')
+        upvote_count_idx = names.index('up_vote_count')
+        downvote_count_idx = names.index('down_vote_count')
+        user_vote_idx = names.index('user_vote')
+        profile_picture_url_idx = names.index('profile_picture_url')
+        created_by_current_user_idx = names.index('created_by_current_user')
+
+        for comment in js['values']:
+            ce = CommentEntry(comment[id_idx], comment[parent_idx], comment[creator_idx], comment[fullname_idx], comment[content_idx], comment[upvote_count_idx], comment[downvote_count_idx], comment[user_vote_idx], comment[profile_picture_url_idx], comment[created_by_current_user_idx])
+            comments.append(ce)
+    else:
+        xbmc.log("Could not extract cf_auth token: Comments cannot be retrieved.")
+
+    return comments
+
+def _create_comment(cookies, video_id, content_in, parent_id):
+    cd = _get_comment_data(cookies, video_id)
+    if cd:
+        content = custom_escape_and_b64encode(content_in)
+
+        timestamp = create_timestamp()
+        post_data = {
+            'commentData[id]': 'c1',
+            'commentData[parent]': parent_id if parent_id else '',
+            'commentData[created]': timestamp,
+            'commentData[modified]': timestamp,
+            'commentData[content]': content,
+            'commentData[fullname]': 'You',
+            'commentData[profile_picture_url]': cd[2],
+            'commentData[created_by_current_user]': 'true',
+            'commentData[up_vote_count]': 0,
+            'commentData[down_vote_count]': 0,
+            'commentData[user_vote]': '',
+            'commentData[is_content_encoded]': 'true',
+            'cf_auth': cd[0]
+        }
+        headers = {
+                'origin': "https://old.bitchute.com/",
+                "User-Agent": USER_AGENT,
+                }
+        url = 'https://commentfreely.bitchute.com/api/create_comment/'
+        response = _post(url, data=post_data, headers=headers, cookies=cookies)
+        js = response.text
+    else:
+        js = {}
+
+    return js
+
+def _remove_comment(cookies, video_id, id, parent_id, creator, fullname):
+    cd = _get_comment_data(cookies, video_id)
+    if cd:
+        timestamp = create_timestamp()
+        post_data = {
+            'commentData[id]': id,
+            'commentData[parent]': parent_id if parent_id else '',
+            'commentData[created]': timestamp,
+            'commentData[modified]': '',
+            'commentData[content]': '',
+            'commentData[fullname]': fullname,
+            'commentData[created_by_admin]': 'false',
+            'commentData[created_by_current_user]': 'true',
+            'commentData[up_vote_count]': 0,
+            'commentData[down_vote_count]': 0,
+            'commentData[user_vote]': '',
+            'commentData[is_new]': 'false',
+            'commentData[profile_picture_url]': cd[2],
+            'commentData[membership_level]': '',
+            'commentData[verified]': 'false',
+            'commentData[primary_flag_reason]': '',
+            'commentData[is_muted]': 'false',
+            'cf_auth': cd[0]
+        }
+        headers = {
+                'origin': "https://old.bitchute.com/",
+                "User-Agent": USER_AGENT,
+                }
+        url = 'https://commentfreely.bitchute.com/api/delete_comment/'
+        _post(url, data=post_data, headers=headers, cookies=cookies)
+
+def _edit_comment(cookies, video_id, id, parent_id, creator, fullname, content_in):
+    cd = _get_comment_data(cookies, video_id)
+    if cd:
+        content = custom_escape_and_b64encode(content_in)
+        timestamp = create_timestamp()
+        modified = str(int(time.time()))
+        post_data = {
+            'commentData[id]': id,
+            'commentData[parent]': parent_id if parent_id else '',
+            'commentData[created]': timestamp,
+            'commentData[modified]': modified,
+            'commentData[content]': content,
+            'commentData[fullname]': fullname,
+            'commentData[profile_picture_url]': cd[2],
+            'commentData[created_by_admin]': 'false',
+            'commentData[created_by_current_user]': 'true',
+            'commentData[is_new]': 'false',
+            'commentData[membership_level]': '',
+            'commentData[primary_flag_reason]': '',
+            'commentData[is_muted]': 'false',
+            'commentData[verified]': 'false',
+            'commentData[is_universal]': 'false',
+            'commentData[up_vote_count]': 0,
+            'commentData[down_vote_count]': 0,
+            'commentData[user_vote]': '',
+            'commentData[is_content_encoded]': 'true',
+            'cf_auth': cd[0]
+        }
+        headers = {
+                'origin': "https://old.bitchute.com/",
+                "User-Agent": USER_AGENT,
+                }
+        url = 'https://commentfreely.bitchute.com/api/update_comment/'
+        _post(url, data=post_data, headers=headers, cookies=cookies)
+
+def _vote_comment(cookies, video_id, id, parent_id, creator, fullname, vote_type):
+    cd = _get_comment_data(cookies, video_id)
+    if cd:
+        timestamp = create_timestamp()
+        post_data = {
+            'commentData[id]': id,
+            'commentData[parent]': parent_id if parent_id else '',
+            'commentData[created]': timestamp,
+            'commentData[modified]': '',
+            'commentData[content]': '',
+            'commentData[creator]': creator,
+            'commentData[fullname]': fullname,
+            'commentData[created_by_admin]': 'false',
+            'commentData[created_by_current_user]': 'true',
+            'commentData[up_vote_count]': 0,
+            'commentData[down_vote_count]': 0,
+            'commentData[user_vote]': '' if vote_type == '' else 'true' if vote_type == 'like' else 'false',
+            'commentData[is_new]': 'false',
+            'commentData[profile_picture_url]': cd[2],
+            'commentData[membership_level]': '',
+            'commentData[verified]': 'false',
+            'commentData[primary_flag_reason]': '',
+            'commentData[is_muted]': 'false',
+            'cf_auth': cd[0]
+        }
+        headers = {
+                'origin': "https://old.bitchute.com/",
+                "User-Agent": USER_AGENT,
+                }
+
+        url = 'https://commentfreely.bitchute.com/api/vote_on_comment/'
+        _post(url, data=post_data, headers=headers, cookies=cookies)
+
 # Wrappers to ensure the subs, notifications, playlists are cached for 15 minutes
 
-def get_page(login, funct, *args):
+def get_page(login, allow_cache, funct, *args):
     if login:
         cookies, success = bt_login()
     else:
@@ -451,46 +674,64 @@ def get_page(login, funct, *args):
         success = True
 
     if success:
-        if addon.getSettingBool("enable_cache"):
+        if allow_cache and addon.getSettingBool("enable_cache"):
             return pickle.loads(data_cache.cacheFunction(funct, cookies, *args))
         else:
-            return pickle.loads(funct(cookies, *args))
+            res = funct(cookies, *args)
+            if allow_cache:
+                res = pickle.loads(res)
+            return res
 
     return []
 
 def get_subscriptions():
-    return get_page(True, _get_subscriptions)
+    return get_page(True, True, _get_subscriptions)
 
 def get_notifications():
-    return get_page(True, _get_notifications)
+    return get_page(True, True, _get_notifications)
 
 def get_playlist(playlist):
-    return get_page(True, _get_playlist, playlist)
+    return get_page(True, True, _get_playlist, playlist)
 
 def get_channel(channel, page, max_count=100):
-    return get_page(True, _get_channel, channel, page, max_count)
+    return get_page(True, True, _get_channel, channel, page, max_count)
 
 def get_popular():
-    return get_page(True, _get_popular)
+    return get_page(True, True, _get_popular)
 
 def get_trending():
-    return get_page(True, _get_trending)
+    return get_page(True, True, _get_trending)
 
 def get_feed():
     if xbmcaddon.Addon().getSettingBool("legacy_feed_behavior"):
         get_feed_func = _get_feed_legacy
     else:
         get_feed_func = _get_feed
-    return get_page(True, get_feed_func)
+    return get_page(True, True, get_feed_func)
 
 def search(query, page):
-    return get_page(True, _search, query, page)
+    return get_page(True, True, _search, query, page)
 
 def get_recently_active():
-    return get_page(True, _get_recently_active)
+    return get_page(True, True, _get_recently_active)
 
 def get_video(video_id):
     return pickle.loads(_get_video([], video_id))
+
+def get_comments(video_id):
+    return get_page(True, False, _get_comments, video_id)
+
+def create_comment(video_id, content, parent_id):
+    return json.loads(get_page(True, False, _create_comment, video_id, content, parent_id))
+
+def remove_comment(video_id, id, parent_id, creator, fullname):
+    return get_page(True, False, _remove_comment, video_id, id, parent_id, creator, fullname)
+
+def edit_comment(video_id, id, parent_id, creator, fullname, content):
+    return get_page(True, False, _edit_comment, video_id, id, parent_id, creator, fullname, content)
+
+def vote_comment(video_id, id, parent_id, creator, fullname, vote_type):
+    return get_page(True, False, _vote_comment, video_id, id, parent_id, creator, fullname, vote_type)
 
 def clear_cache(login=True, data=True):
     if login:

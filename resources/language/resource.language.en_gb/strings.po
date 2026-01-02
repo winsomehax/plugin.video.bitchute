@@ -155,3 +155,71 @@ msgstr ""
 msgctxt "#30038"
 msgid "Video resolver port"
 msgstr ""
+
+msgctxt "#30039"
+msgid "Comments"
+msgstr ""
+
+msgctxt "#30040"
+msgid "Clear vote"
+msgstr ""
+
+msgctxt "#30041"
+msgid "Upvote"
+msgstr ""
+
+msgctxt "#30042"
+msgid "Downvote"
+msgstr ""
+
+msgctxt "#30043"
+msgid "New comment"
+msgstr ""
+
+msgctxt "#30044"
+msgid "Reply"
+msgstr ""
+
+msgctxt "#30045"
+msgid "Edit"
+msgstr ""
+
+msgctxt "#30046"
+msgid "Remove"
+msgstr ""
+
+msgctxt "#30047"
+msgid "Refresh"
+msgstr ""
+
+msgctxt "#30048"
+msgid "Loading comments..."
+msgstr ""
+
+msgctxt "#30049"
+msgid "Please wait"
+msgstr ""
+
+msgctxt "#30050"
+msgid "No comments"
+msgstr ""
+
+msgctxt "#30051"
+msgid "Posting"
+msgstr ""
+
+msgctxt "#30052"
+msgid "Waiting for response..."
+msgstr ""
+
+msgctxt "#30053"
+msgid "New comment"
+msgstr ""
+
+msgctxt "#30054"
+msgid "Reply"
+msgstr ""
+
+msgctxt "#30055"
+msgid "Display comment avatars"
+msgstr ""
