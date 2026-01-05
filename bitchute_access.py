@@ -525,7 +525,11 @@ def _get_comments(cookies, video_id):
         created_by_current_user_idx = names.index('created_by_current_user')
 
         for comment in js['values']:
-            ce = CommentEntry(comment[id_idx], comment[parent_idx], comment[creator_idx], comment[fullname_idx], comment[content_idx], comment[upvote_count_idx], comment[downvote_count_idx], comment[user_vote_idx], comment[profile_picture_url_idx], comment[created_by_current_user_idx])
+            ce = CommentEntry(comment[id_idx], comment[parent_idx],
+               comment[creator_idx], comment[fullname_idx],
+               comment[content_idx].replace('\n', '  '), comment[upvote_count_idx],
+               comment[downvote_count_idx], comment[user_vote_idx],
+               comment[profile_picture_url_idx], comment[created_by_current_user_idx])
             comments.append(ce)
     else:
         xbmc.log("Could not extract cf_auth token: Comments cannot be retrieved.")
