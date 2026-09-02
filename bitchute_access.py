@@ -345,18 +345,23 @@ def _get_feed_legacy(cookies):
 
     return pickle.dumps(feed)
 
-def _get_recently_active(cookies):
-    url = "https://old.bitchute.com/channels/"
-    resp = _get(url, cookies=cookies)
-
-    soup = BeautifulSoup(resp.text, "html.parser")
-    containers = soup.find_all(class_="channel-card")
+def _build_channels_from_container(container):
+    """Parse a list of ``.channel-card`` elements into a pickled list of
+    Subscription. Works for the initial ``/channels/`` page container or an
+    ``extend`` response fragment."""
+    containers = container.find_all(class_="channel-card")
 
     subs = []
     for n in containers:
         try:
+            # Strip the trailing slash so the value routes through
+            # /channel/<item_val> (routing's <item_val> matches no slashes).
+            # _get_channel() accepts either form when building the extend URL.
+            channel = n.find("a").attrs["href"].replace("/channel/", "").rstrip("/")
+            # The first <img> inside the card carries the poster URL. There are
+            # several lazyload imgs (medium/large variants); the first one is the
+            # responsive base and is what the site's ``data-src`` resolves to.
             channel_image = n.find("a").find("img").attrs["data-src"]
-            channel = n.find("a").attrs["href"].replace("/channel/", "")
             name = n.find(class_="channel-card-title").get_text()
 
             s = Subscription(name=name, channel=channel, description="",
@@ -368,6 +373,32 @@ def _get_recently_active(cookies):
             xbmc.log(str(n))
 
     return pickle.dumps(subs)
+
+
+def _get_recently_active(cookies, page):
+    """Return one page (24 channels) of Bitchute's channel discovery listing.
+
+    Page 0 fetches ``/channels/`` and parses the ``channel-card`` blocks. Later
+    pages POST to ``/channels/extend/`` (the AJAX mechanism behind the site's
+    auto-scroll "SHOW MORE") and parse the returned HTML fragment.
+    """
+    base = "https://old.bitchute.com/channels/"
+
+    if page == 0:
+        resp = _get(base, cookies=cookies)
+        soup = BeautifulSoup(resp.text, "html.parser")
+        # The channel cards sit directly in #content; reuse a wrapper container.
+        container = soup
+    else:
+        token = cookies['csrftoken']
+        post_data = {'csrfmiddlewaretoken': token, 'offset': page * 24}
+        headers = {'referer': base, "User-Agent": USER_AGENT}
+        response = _post(base + "extend/", data=post_data,
+                         headers=headers, cookies=cookies)
+        resp = json.loads(response.text)
+        container = BeautifulSoup(resp["html"], "html.parser")
+
+    return _build_channels_from_container(container)
 
 
 def _get_video(cookies, video_id):
@@ -716,8 +747,8 @@ def get_feed():
 def search(query, page):
     return get_page(True, True, _search, query, page)
 
-def get_recently_active():
-    return get_page(True, True, _get_recently_active)
+def get_recently_active(page):
+    return get_page(True, True, _get_recently_active, page)
 
 def get_video(video_id):
     return pickle.loads(_get_video([], video_id))
