@@ -40,7 +40,7 @@ class KODIMenu():
     def new_folder_item(self, item_name, description, iconURL, func, **kwargs):
         li = ListItem(label=item_name)
         li.setIsFolder(True)
-        li.setProperty('IsPlayable', 'True')
+        li.setProperty('IsPlayable', 'False')
         li.getVideoInfoTag().setPlot(description)
         li.setArt({'icon': iconURL, 'poster': iconURL, 'thumb': iconURL,
                    'banner': iconURL, 'fanart' : iconURL})

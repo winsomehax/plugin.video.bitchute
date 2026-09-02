@@ -39,8 +39,8 @@ class CommentWindowXML(WindowXMLDialog):
             offset = 0
             invalid_offset = 10000
 
-            id = item.getProperty('id')
-            is_user = item.getProperty('is_user') == '1'
+            id = item.getProperty('id') if item else None
+            is_user = item is not None and item.getProperty('is_user') == '1'
 
             if item and not is_user:
                 if item.getProperty('user_vote') != str(0):
@@ -97,10 +97,10 @@ class CommentWindowXML(WindowXMLDialog):
             menu.append(tr(30047)) # Refresh
             offsets.append(offset)
 
-            id = item.getProperty('id')
-            parent_id = item.getProperty('parent_id')
-            creator = item.getProperty('creator')
-            fullname = item.getProperty('fullname')
+            id = item.getProperty('id') if item else None
+            parent_id = item.getProperty('parent_id') if item else None
+            creator = item.getProperty('creator') if item else None
+            fullname = item.getProperty('fullname') if item else None
 
             ret = Dialog().contextmenu(menu)
 

@@ -39,7 +39,7 @@
 					<default>false</default>
 					<control type="toggle"/>
 				</setting>
-				<setting id="enable_cache" label="30036" type="boolean" help="Use legacy feed behavior">
+				<setting id="enable_cache" label="30036" type="boolean" help="Cache network responses to speed up browsing">
 					<level>3</level>
 					<default>true</default>
 					<control type="toggle"/>

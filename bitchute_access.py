@@ -293,7 +293,7 @@ def _get_channel(cookies, channel, page, max_count=100):
         containers = soup.find_all(class_="channel-videos-container")
     except AttributeError as e:
         xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
-        xbmc.log("****************: ", channel)
+        xbmc.log("**************** channel: " + str(channel))
         containers = []                   # the looping will skip later
 
     videos = []
