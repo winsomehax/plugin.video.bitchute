@@ -81,6 +81,34 @@ class CommentEntry():
 
 DEFAULT_HEADERS = {"User-Agent": USER_AGENT}
 
+# Bitchute browse categories. Ordered as presented in the site's nav.
+# (slug, display name)
+CATEGORIES = [
+    ("animation", "Anime & Animation"),
+    ("arts", "Arts & Literature"),
+    ("vehicles", "Auto & Vehicles"),
+    ("beauty", "Beauty & Fashion"),
+    ("finance", "Business & Finance"),
+    ("cuisine", "Cuisine"),
+    ("diy", "DIY & Gardening"),
+    ("education", "Education"),
+    ("entertainment", "Entertainment"),
+    ("gaming", "Gaming"),
+    ("health", "Health & Medical"),
+    ("music", "Music"),
+    ("news", "News & Politics"),
+    ("family", "People & Family"),
+    ("animals", "Pets & Wildlife"),
+    ("science", "Science & Technology"),
+    ("spirituality", "Spirituality & Faith"),
+    ("sport", "Sports & Fitness"),
+    ("travel", "Travel"),
+    ("vlogging", "Vlogging"),
+]
+
+# Videos served per category page / per extend call.
+CATEGORY_PAGE_SIZE = 24
+
 def _get(url, cookies=[], headers=DEFAULT_HEADERS):
     resp = requests.get(url, cookies=cookies, timeout=REQUEST_TIMEOUT, headers=headers)
     xbmc.log(f"GET request: {url} ({resp.status_code})")
@@ -183,14 +211,10 @@ def _get_notifications(cookies):
 
     return pickle.dumps(notifs)
 
-def _build_playlist_common(listing_id, cookies):
-    url = "https://old.bitchute.com/"
-    resp = _get(url, cookies=cookies)
-    cookies = resp.cookies
-
-    soup = BeautifulSoup(resp.text, "html.parser")
-    popular = soup.find(id=listing_id)
-    containers = popular.find_all(class_="video-card")
+def _build_playlist_from_container(container):
+    """Parse a list of ``.video-card`` elements (e.g. a listing-* tab or an
+    ``extend`` response fragment) into a pickled list of PlaylistEntry."""
+    containers = container.find_all(class_="video-card")
 
     playlist = []
     for n in containers:
@@ -213,6 +237,16 @@ def _build_playlist_common(listing_id, cookies):
             xbmc.log(str(n))
 
     return pickle.dumps(playlist)
+
+def _build_playlist_common(listing_id, cookies):
+    url = "https://old.bitchute.com/"
+    resp = _get(url, cookies=cookies)
+    cookies = resp.cookies
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    popular = soup.find(id=listing_id)
+
+    return _build_playlist_from_container(popular)
 
 def _get_popular(cookies):
     return _build_playlist_common("listing-popular", cookies)
@@ -321,6 +355,36 @@ def _get_channel(cookies, channel, page, max_count=100):
         count = count + 1
 
     return pickle.dumps(videos)
+
+def _get_category(cookies, category, page):
+    """Return one page (24 videos) of a browse category.
+
+    Page 0 fetches ``/category/<slug>/`` and parses the ``#listing-popular``
+    tab. Later pages POST to ``/category/<slug>/extend/`` (the same AJAX
+    mechanism the site's "SHOW MORE" button uses) and parse the returned HTML
+    fragment.
+    """
+    referer = "https://old.bitchute.com/category/" + category + "/"
+
+    if page == 0:
+        url = referer
+        resp = _get(url, cookies=cookies)
+        soup = BeautifulSoup(resp.text, "html.parser")
+        container = soup.find(id="listing-popular")
+    else:
+        token = cookies['csrftoken']
+        post_data = {'csrfmiddlewaretoken': token, 'offset': page * CATEGORY_PAGE_SIZE}
+        headers = {'referer': referer, "User-Agent": USER_AGENT}
+        url = "https://old.bitchute.com/category/" + category + "/extend/"
+        response = _post(url, data=post_data, headers=headers, cookies=cookies)
+        resp = json.loads(response.text)
+        container = BeautifulSoup(resp["html"], "html.parser")
+
+    if container is None:
+        return pickle.dumps([])
+
+    return _build_playlist_from_container(container)
+
 
 def _get_feed_sub_legacy(params):
     (sub, cookies) = params
@@ -699,6 +763,9 @@ def get_playlist(playlist):
 
 def get_channel(channel, page, max_count=100):
     return get_page(True, True, _get_channel, channel, page, max_count)
+
+def get_category(category, page):
+    return get_page(True, True, _get_category, category, page)
 
 def get_popular():
     return get_page(True, True, _get_popular)

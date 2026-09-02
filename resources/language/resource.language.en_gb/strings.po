@@ -223,3 +223,11 @@ msgstr ""
 msgctxt "#30055"
 msgid "Display comment avatars"
 msgstr ""
+
+msgctxt "#30056"
+msgid "Categories"
+msgstr ""
+
+msgctxt "#30057"
+msgid "Browse videos by Bitchute category"
+msgstr ""
