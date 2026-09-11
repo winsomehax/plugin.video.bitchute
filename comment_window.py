@@ -330,7 +330,6 @@ class CommentWindowXML(WindowXMLDialog):
         return li_copy
 
     def refresh_label(self, li, selected=True):
-        li.getProperty('id');
         fullname = li.getProperty('fullname')
         upvote_count = int(li.getProperty('upvote_count'))
         downvote_count = int(li.getProperty('downvote_count'))

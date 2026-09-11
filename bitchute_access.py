@@ -8,6 +8,8 @@ import time
 import requests
 import xbmcaddon
 from bs4 import BeautifulSoup
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from xbmcgui import Dialog
 import xbmc
 
@@ -81,6 +83,21 @@ class CommentEntry():
 
 DEFAULT_HEADERS = {"User-Agent": USER_AGENT}
 
+# Shared session for connection pooling and transparent retries. urllib3's
+# default retry method set excludes POST, so comment/vote writes are never
+# replayed; only idempotent requests are retried.
+_session = requests.Session()
+_retry = Retry(
+    total=3,
+    connect=3,
+    read=3,
+    backoff_factor=0.5,
+    status_forcelist=(500, 502, 503, 504),
+)
+_adapter = HTTPAdapter(max_retries=_retry)
+_session.mount("https://", _adapter)
+_session.mount("http://", _adapter)
+
 # Bitchute browse categories. Ordered as presented in the site's nav.
 # (slug, display name)
 CATEGORIES = [
@@ -109,13 +126,16 @@ CATEGORIES = [
 # Videos served per category page / per extend call.
 CATEGORY_PAGE_SIZE = 24
 
+# Channels served per discovery page / per extend call.
+CHANNEL_PAGE_SIZE = 24
+
 def _get(url, cookies=[], headers=DEFAULT_HEADERS):
-    resp = requests.get(url, cookies=cookies, timeout=REQUEST_TIMEOUT, headers=headers)
+    resp = _session.get(url, cookies=cookies, timeout=REQUEST_TIMEOUT, headers=headers)
     xbmc.log(f"GET request: {url} ({resp.status_code})")
     return resp
 
 def _post(url, data, cookies=[], headers=DEFAULT_HEADERS):
-    resp = requests.post(url, data=data, headers=headers, cookies=cookies,
+    resp = _session.post(url, data=data, headers=headers, cookies=cookies,
                          timeout=REQUEST_TIMEOUT)
     xbmc.log(f"POST request: {url} ({resp.status_code})")
     return resp
@@ -442,7 +462,7 @@ def _build_channels_from_container(container):
 
 
 def _get_recently_active(cookies, page):
-    """Return one page (24 channels) of Bitchute's channel discovery listing.
+    """Return one page (CHANNEL_PAGE_SIZE channels) of Bitchute's channel discovery listing.
 
     Page 0 fetches ``/channels/`` and parses the ``channel-card`` blocks. Later
     pages POST to ``/channels/extend/`` (the AJAX mechanism behind the site's
@@ -457,7 +477,7 @@ def _get_recently_active(cookies, page):
         container = soup
     else:
         token = cookies['csrftoken']
-        post_data = {'csrfmiddlewaretoken': token, 'offset': page * 24}
+        post_data = {'csrfmiddlewaretoken': token, 'offset': page * CHANNEL_PAGE_SIZE}
         headers = {'referer': base, "User-Agent": USER_AGENT}
         response = _post(base + "extend/", data=post_data,
                          headers=headers, cookies=cookies)
@@ -517,8 +537,8 @@ def _search(cookies, query, page):
     response = _get(url, cookies=cookies)
 
     text = response.text
-    str = 'searchAuth('
-    s = text.find(str) + len(str)
+    marker = 'searchAuth('
+    s = text.find(marker) + len(marker)
     e = text.find(")", s+1)
     params = text[s:e].split(',', 2)
     timestamp = params[0].strip()[1:-1]
@@ -610,16 +630,20 @@ def _get_comments(cookies, video_id):
         js = json.loads(response.text)
         names = js['names']
 
-        id_idx = names.index('id')
-        parent_idx = names.index('parent')
-        creator_idx = names.index('creator')
-        fullname_idx = names.index('fullname')
-        content_idx = names.index('content')
-        upvote_count_idx = names.index('up_vote_count')
-        downvote_count_idx = names.index('down_vote_count')
-        user_vote_idx = names.index('user_vote')
-        profile_picture_url_idx = names.index('profile_picture_url')
-        created_by_current_user_idx = names.index('created_by_current_user')
+        try:
+            id_idx = names.index('id')
+            parent_idx = names.index('parent')
+            creator_idx = names.index('creator')
+            fullname_idx = names.index('fullname')
+            content_idx = names.index('content')
+            upvote_count_idx = names.index('up_vote_count')
+            downvote_count_idx = names.index('down_vote_count')
+            user_vote_idx = names.index('user_vote')
+            profile_picture_url_idx = names.index('profile_picture_url')
+            created_by_current_user_idx = names.index('created_by_current_user')
+        except ValueError as e:
+            xbmc.log("Unexpected comment schema, missing field: " + str(e))
+            return comments
 
         for comment in js['values']:
             ce = CommentEntry(comment[id_idx], comment[parent_idx],

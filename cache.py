@@ -2,7 +2,7 @@ import xbmcaddon
 
 try:
     import StorageServer
-except:
+except ImportError:
     import storageserverdummy as StorageServer
 
 # add version to name so if there is a version bump it avoid cache issues

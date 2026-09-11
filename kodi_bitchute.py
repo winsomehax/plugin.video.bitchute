@@ -142,14 +142,17 @@ def entries_to_listitems(entries, finalize_folder=True):
                 if not isinstance(n, bitchute_access.SearchEntry):
                     description += "Date: " + n.date + "\n"
 
-                    d = 0
-                    m = 1
-                    toks = n.duration.split(":")
-                    ntoks = len(toks)
-                    for i in range(ntoks):
-                        d = d + m*int(toks[ntoks-i-1])
-                        m = m*60
-                    duration = d
+                    try:
+                        d = 0
+                        m = 1
+                        toks = n.duration.split(":")
+                        ntoks = len(toks)
+                        for i in range(ntoks):
+                            d = d + m*int(toks[ntoks-i-1])
+                            m = m*60
+                        duration = d
+                    except (AttributeError, ValueError):
+                        duration = None
 
                 poster = n.poster
             if description != "":
@@ -214,7 +217,7 @@ def build_channels(page):
             menu.new_folder_item(
                 item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image, description=sub.description)
 
-        if len(subs) == 24:
+        if len(subs) == bitchute_access.CHANNEL_PAGE_SIZE:
             menu.new_folder_item(loc(30035), loc(30035),
                                  None, channels_offset, page=page+1) # Next page
 
