@@ -577,7 +577,7 @@ def custom_escape_and_b64encode(e):
     return base64.b64encode(o.encode('latin-1')).decode('utf-8')
 
 def create_timestamp():
-    timestamp = datetime.datetime.now(datetime.UTC).isoformat().replace("+00:00", "")
+    timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "")
     return timestamp[:-3] + 'Z'
 
 def _get_comment_data(cookies, video_id):
