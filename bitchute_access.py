@@ -474,9 +474,9 @@ def _get_video(cookies, video_id):
             raise Exception("Max rate-limiting backoff of 256 seconds reached: Aborting")
 
         xbmc.log("Rate limited. Backing off for {} seconds".format(backoff))
-        xbmc.sleep(backoff)
+        xbmc.sleep(backoff * 1000)
 
-        resp = _get(url)
+        resp = _get(url, cookies=cookies)
 
         backoff *= 2
 
