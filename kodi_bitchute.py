@@ -140,7 +140,7 @@ def entries_to_listitems(entries, finalize_folder=True):
             if not isinstance(n, bitchute_access.NotificationEntry):
                 description += "[B]" + n.channel_name + "[/B]\n"
                 if not isinstance(n, bitchute_access.SearchEntry):
-                    description += "Date: " + n.date + "\n"
+                    description += loc(30058) + ": " + n.date + "\n"
 
                     try:
                         d = 0

@@ -231,3 +231,7 @@ msgstr ""
 msgctxt "#30057"
 msgid "Browse videos by Bitchute category"
 msgstr ""
+
+msgctxt "#30058"
+msgid "Date"
+msgstr ""
