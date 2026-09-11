@@ -405,7 +405,9 @@ def _get_feed_legacy(cookies):
 
     feed = []
     for param in params:
-        feed.append(_get_feed_sub_legacy(param))
+        item = _get_feed_sub_legacy(param)
+        if item is not None:
+            feed.append(item)
 
     return pickle.dumps(feed)
 
