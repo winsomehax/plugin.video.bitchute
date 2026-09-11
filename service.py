@@ -13,6 +13,8 @@ cache = {}
 stop_event = threading.Event()
 thread = None
 port = int(addon.getSetting('proxy_port'))
+username = addon.getSetting('user')
+password = addon.getSetting('password')
 
 class ResolveVideoUrlProxy(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -75,12 +77,24 @@ class Monitor(xbmc.Monitor):
     def onSettingsChanged(self):
         global addon
         global port
+        global username
+        global password
         global restart_server
         global thread
 
         addon = xbmcaddon.Addon()
 
         new_port = int(addon.getSetting('proxy_port'))
+        new_username = addon.getSetting('user')
+        new_password = addon.getSetting('password')
+
+        if new_username != username or new_password != password:
+            # Credentials changed: drop the cached login and any data that was
+            # fetched with the old account.
+            username = new_username
+            password = new_password
+            bitchute_access.clear_cache(login=True, data=True)
+
         if port != new_port:
             bitchute_access.clear_cache(login=False, data=True)
             stop_proxy()
