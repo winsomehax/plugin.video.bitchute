@@ -183,7 +183,7 @@ def _get_subscriptions(cookies):
             subs.append(sub)
         except AttributeError as e:
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
-            xbmc.log(str(n))
+            xbmc.log(str(sub))
 
     subs.sort(key=lambda sub: str.lower(sub.name))
 
