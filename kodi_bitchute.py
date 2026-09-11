@@ -79,6 +79,15 @@ def category_offset(item_val):
     item_val2=int(plugin.args['item_val2'][0])
     build_a_category(item_val, item_val2)
 
+@plugin.route('/channels')
+def channels():
+    build_channels(0)
+
+@plugin.route('/channels_offset')
+def channels_offset():
+    page_off = int(plugin.args['page'][0])
+    build_channels(page_off)
+
 @plugin.route('/open_settings')
 def open_settings():
     build_open_settings()
@@ -169,6 +178,7 @@ def build_main_menu():
     menu.new_folder_item(item_name=loc(30018), description=loc(30019), iconURL=iconURL, item_val=None, func=popular)
     menu.new_folder_item(item_name=loc(30020), description=loc(30021), iconURL=iconURL, item_val=None, func=trending)
     menu.new_folder_item(item_name=loc(30056), description=loc(30057), iconURL=iconURL, item_val=None, func=categories)
+    menu.new_folder_item(item_name=loc(30016), description=loc(30017), iconURL=iconURL, item_val=None, func=channels)
     menu.new_folder_item(item_name=loc(30012), description=loc(30013), iconURL=iconURL, item_val=None, func=favourites)
     menu.new_folder_item(item_name=loc(30014), description=loc(30015), iconURL=iconURL, item_val=None, func=watch_later)
     menu.new_folder_item(item_name=loc(30008), description=loc(30009), iconURL=iconURL, item_val=None, func=search)
@@ -188,6 +198,25 @@ def build_subscriptions():
         for sub in subscriptions:
             menu.new_folder_item(
                 item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image, description=sub.description)
+
+    menu.end_folder()
+
+def build_channels(page):
+    global menu
+    menu.start_folder()
+
+    subs = bitchute_access.get_recently_active(page)
+
+    if 0 == len(subs):
+        menu.new_info_item(loc(30028))
+    else:
+        for sub in subs:
+            menu.new_folder_item(
+                item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image, description=sub.description)
+
+        if len(subs) == 24:
+            menu.new_folder_item(loc(30035), loc(30035),
+                                 None, channels_offset, page=page+1) # Next page
 
     menu.end_folder()
 
