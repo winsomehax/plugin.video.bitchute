@@ -60,8 +60,12 @@ def start_proxy():
 
 def stop_proxy():
     stop_event.set()
-    requests.get(url="http://localhost:" + str(port) + "/quit")
-    thread.join()
+    try:
+        requests.get(url="http://localhost:" + str(port) + "/quit", timeout=5)
+    except Exception as e:
+        xbmc.log("Failed to signal proxy server shutdown: " + str(e))
+    if thread is not None:
+        thread.join()
     stop_event.clear()
 
 class Monitor(xbmc.Monitor):
