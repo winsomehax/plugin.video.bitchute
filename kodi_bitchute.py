@@ -276,7 +276,12 @@ def build_trending():
 
 def play_video(video_id):
     global menu
-    v = bitchute_access.get_video(video_id)
+    try:
+        v = bitchute_access.get_video(video_id)
+    except Exception as e:
+        xbmc.log("Failed to resolve video {}: {}".format(video_id, e))
+        Dialog().ok(loc(30059), loc(30060))
+        return
     menu.play_now(v.video_url)
 
 def build_open_settings():

@@ -20,6 +20,10 @@ USER_AGENT = "Bitchute Kodi-Addon/1"
 REQUEST_TIMEOUT = 15
 addon = xbmcaddon.Addon()
 
+class VideoUnavailableError(Exception):
+    """Raised when a video's media URL cannot be extracted from its page."""
+    pass
+
 class Subscription():
     def __init__(self, name, channel, description, channel_image):
         self.name = name
@@ -507,16 +511,25 @@ def _get_video(cookies, video_id):
     def extract_js_variable(var_name, term_symbol):
         sstr = 'var ' + var_name + ' = '
         off = resp.text.find(sstr)
+        if off == -1:
+            return None
+
         soff = resp.text.find(term_symbol, off)
-        while resp.text[soff-1] == '\\':
+        while soff > 0 and resp.text[soff-1] == '\\':
             soff = resp.text.find(term_symbol, soff+1)
+        if soff == -1:
+            return None
+
         eoff = resp.text.find(term_symbol, soff+1)
-        while resp.text[eoff-1] == '\\':
+        while eoff > 0 and resp.text[eoff-1] == '\\':
             eoff = resp.text.find(term_symbol, eoff+1)
+        if eoff == -1:
+            return None
+
         return resp.text[soff+1:eoff].replace('\\','')
 
-    video_name = extract_js_variable("video_name", "\"")
-    thumbnail_url = extract_js_variable("thumbnail_url", "'")
+    video_name = extract_js_variable("video_name", "\"") or ""
+    thumbnail_url = extract_js_variable("thumbnail_url", "'") or ""
 
     if addon.getSettingBool('high_resolution_thumbnails'):
         thumbnail_url = thumbnail_url.replace('320','640').replace('180', '360')
@@ -524,6 +537,10 @@ def _get_video(cookies, video_id):
     media_url = extract_js_variable("media_url", "'")
 
     xbmc.log("Scraping video info: {}\nMedia URL: {}\nThumbnail URL: {}\nScrape URL: {}\n".format(video_name, media_url, thumbnail_url, url))
+
+    if not media_url:
+        raise VideoUnavailableError(
+            "Could not extract media URL for video {}".format(video_id))
 
     return pickle.dumps(Video(video_id=video_id, video_url=media_url, poster=thumbnail_url,
                   title=video_name))
@@ -538,9 +555,22 @@ def _search(cookies, query, page):
 
     text = response.text
     marker = 'searchAuth('
-    s = text.find(marker) + len(marker)
-    e = text.find(")", s+1)
-    params = text[s:e].split(',', 2)
+    start = text.find(marker)
+    if start != -1:
+        start += len(marker)
+        end = text.find(")", start)
+    else:
+        end = -1
+
+    if start == -1 or end == -1:
+        xbmc.log("Could not locate searchAuth parameters; search is unavailable.")
+        return pickle.dumps([])
+
+    params = text[start:end].split(',', 2)
+    if len(params) < 2:
+        xbmc.log("Unexpected searchAuth parameter count; search is unavailable.")
+        return pickle.dumps([])
+
     timestamp = params[0].strip()[1:-1]
     nonce = params[1].strip()[1:-1]
 
@@ -561,15 +591,24 @@ def _search(cookies, query, page):
             "User-Agent": USER_AGENT,
             }
     response = _post(url, data=post_data, headers=headers, cookies=response.cookies)
-    val = json.loads(response.text)
+    try:
+        val = json.loads(response.text)
+    except ValueError as e:
+        xbmc.log("Search returned an unparseable response: " + str(e))
+        return pickle.dumps([])
 
     results = []
-    for result in val["results"]:
-        video_id = result["id"]
-        title = result["name"]
-        description = result["description"].lstrip().rstrip().replace('<p>','').replace('</p>','')
-        channel_name = result["channel_name"]
-        poster = result["images"]["thumbnail"]
+    for result in val.get("results", []):
+        try:
+            video_id = result["id"]
+            title = result["name"]
+            description = result["description"].lstrip().rstrip().replace('<p>','').replace('</p>','')
+            channel_name = result["channel_name"]
+            poster = result["images"]["thumbnail"]
+        except (KeyError, TypeError, AttributeError) as e:
+            xbmc.log("Skipping malformed search result: " + str(e))
+            continue
+
         r = SearchEntry(video_id=video_id, title=title, description=description,
                         channel_name=channel_name, poster=poster)
         results.append(r)

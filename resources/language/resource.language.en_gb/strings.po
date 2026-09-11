@@ -235,3 +235,11 @@ msgstr ""
 msgctxt "#30058"
 msgid "Date"
 msgstr ""
+
+msgctxt "#30059"
+msgid "Unable to play video"
+msgstr ""
+
+msgctxt "#30060"
+msgid "The video could not be resolved. It may have been removed, or Bitchute's page format may have changed."
+msgstr ""

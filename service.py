@@ -30,7 +30,14 @@ class ResolveVideoUrlProxy(BaseHTTPRequestHandler):
             if len(cache) == 1000:
                 cache.clear()
 
-            vid = bitchute_access.get_video(video_id)
+            try:
+                vid = bitchute_access.get_video(video_id)
+            except Exception as e:
+                xbmc.log("Failed to resolve video {}: {}".format(video_id, e))
+                self.send_response(502)
+                self.end_headers()
+                return
+
             cache[video_id] = vid
 
         self.send_response(302)
