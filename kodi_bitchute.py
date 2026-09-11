@@ -280,5 +280,10 @@ def play_video(video_id):
     menu.play_now(v.video_url)
 
 def build_open_settings():
-    xbmcaddon.Addon().openSettings()
-    bitchute_access.bt_login()
+    addon = xbmcaddon.Addon()
+    addon.openSettings()
+
+    # Only attempt a login when credentials are actually configured, otherwise
+    # simply opening settings would report a bogus login failure.
+    if addon.getSetting("user") and addon.getSetting("password"):
+        bitchute_access.bt_login()
