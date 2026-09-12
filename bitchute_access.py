@@ -26,12 +26,14 @@ class VideoUnavailableError(Exception):
     pass
 
 class Subscription():
-    def __init__(self, name, channel, description, channel_image, subscribers=None):
+    def __init__(self, name, channel, description, channel_image, subscribers=None,
+                 channel_id=None):
         self.name = name
         self.channel = channel
         self.description = description
         self.channel_image = channel_image
         self.subscribers = subscribers
+        self.channel_id = channel_id
 
 class Video():
     def __init__(self, video_id, video_url, poster, title):
@@ -41,14 +43,16 @@ class Video():
         self.title = title
 
 class NotificationEntry():
-    def __init__(self, video_id, title, description):
+    def __init__(self, video_id, title, description, channel_name=u"", channel_id=None):
         self.video_id = video_id
         self.title = title
         self.description = description
+        self.channel_name = channel_name
+        self.channel_id = channel_id
 
 class SearchEntry():
     def __init__(self, video_id, description, title, poster, channel_name,
-                 upvotes=None, downvotes=None):
+                 upvotes=None, downvotes=None, channel_id=None):
         self.video_id = video_id
         self.title = title
         self.description = description
@@ -56,10 +60,11 @@ class SearchEntry():
         self.channel_name = channel_name
         self.upvotes = upvotes
         self.downvotes = downvotes
+        self.channel_id = channel_id
 
 class ChannelEntry():
     def __init__(self, video_id, title, description, channel_name=u"", date=0, duration=0, poster="",
-                 upvotes=None, downvotes=None):
+                 upvotes=None, downvotes=None, channel_id=None):
         self.video_id = video_id
         self.title = title
         self.description = description
@@ -69,10 +74,11 @@ class ChannelEntry():
         self.poster = poster
         self.upvotes = upvotes
         self.downvotes = downvotes
+        self.channel_id = channel_id
 
 class PlaylistEntry():
     def __init__(self, video_id, description, title, channel_name=u"", duration=u"", date=u"", poster="",
-                 upvotes=None, downvotes=None):
+                 upvotes=None, downvotes=None, channel_id=None):
         self.video_id = video_id
         self.title = title
         self.description = description
@@ -82,6 +88,7 @@ class PlaylistEntry():
         self.poster = poster
         self.upvotes = upvotes
         self.downvotes = downvotes
+        self.channel_id = channel_id
 
 class CommentEntry():
     def __init__(self, id, parent_id, creator, fullname, content, upvote_count, downvote_count, user_vote, profile_picture_url, created_by_current_user):
@@ -212,6 +219,20 @@ def bt_login(show_dialog=True):
     cookies = pickle.loads(pickled_cookies)
     return cookies, True
 
+def _channel_id_from_image(image_url):
+    """Extract the channel ID from a channel or video cover image URL.
+
+    Channel images are served from
+    ``https://static-3.bitchute.com/live/channel_images/<channel_id>/<hash>.jpg``
+    and video covers from
+    ``https://static-3.bitchute.com/live/cover_images/<channel_id>/<hash>.jpg``.
+    The channel ID is what the subscribe endpoint expects.
+    """
+    if not image_url:
+        return None
+    match = re.search(r"(?:channel_images|cover_images)/([^/]+)/", image_url)
+    return match.group(1) if match else None
+
 def _get_subscriptions(cookies):
     url = "https://old.bitchute.com/subscriptions/"
     resp = _get(url, cookies=cookies)
@@ -229,7 +250,8 @@ def _get_subscriptions(cookies):
             description = sub.find(class_="subscription-description-text").get_text()
 
             sub = Subscription(name=name, channel=channel,
-                             description=description, channel_image=channel_image)
+                             description=description, channel_image=channel_image,
+                             channel_id=_channel_id_from_image(channel_image))
             subs.append(sub)
         except AttributeError as e:
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
@@ -261,20 +283,37 @@ def _get_notifications(cookies, page):
 
     containers = soup.find_all(class_="notification-item")
 
+    # Notification entries don't carry the channel ID, but the detail text
+    # starts with the channel's display name, which can be matched against
+    # the subscription list.
+    subscriptions = get_subscriptions()
+
     notifs = []
     for n in containers:
         try:
             video_id = n.find(class_="notification-view").attrs["href"].split("/")[2]
             title = n.find(class_="notification-target").get_text()
             description = n.find(class_="notification-detail").get_text()
+            channel_name = description.rsplit(" - ", 1)[0].strip()
+            channel = _find_subscription_by_name(channel_name, subscriptions)
 
-            notif = NotificationEntry(video_id=video_id, title=title, description=description)
+            notif = NotificationEntry(video_id=video_id, title=title, description=description,
+                                      channel_name=channel_name,
+                                      channel_id=getattr(channel, 'channel_id', None) if channel else None)
             notifs.append(notif)
         except AttributeError as e:
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
             xbmc.log(str(n))
 
     return pickle.dumps(notifs)
+
+def _find_subscription_by_name(name, subscriptions):
+    """Return the subscription whose display name matches ``name``."""
+    normalized = name.strip().casefold()
+    for sub in subscriptions:
+        if sub.name.strip().casefold() == normalized:
+            return sub
+    return None
 
 def _strip_html(text):
     """Return plain text for a snippet of Bitchute HTML."""
@@ -370,7 +409,8 @@ def _build_playlist_from_container(container, cookies):
             date = n.find(class_="video-card-published").get_text()
 
             s = PlaylistEntry(video_id=video_id, description=description, title=title,
-                              channel_name=channel_name, date=date, duration=duration, poster=poster)
+                              channel_name=channel_name, date=date, duration=duration, poster=poster,
+                              channel_id=_channel_id_from_image(poster))
             playlist.append(s)
 
         except AttributeError as e:
@@ -437,7 +477,8 @@ def _get_trending(cookies):
             date = n.find(class_="video-result-details").find("span").get_text()
 
             s = PlaylistEntry(video_id=video_id, description=description, title=title,
-                              channel_name=channel_name, date=date, duration=duration, poster=poster)
+                              channel_name=channel_name, date=date, duration=duration, poster=poster,
+                              channel_id=_channel_id_from_image(poster))
             playlist.append(s)
 
         except AttributeError as e:
@@ -482,7 +523,8 @@ def _get_playlist(cookies, playlist_name, page):
             duration = n.find(class_="video-duration").get_text()
             date= n.find(class_="details").find("span").get_text()
             s = PlaylistEntry(video_id=video_id, description=description, title=title,
-                              channel_name=channel_name, duration=duration, date=date, poster=poster)
+                              channel_name=channel_name, duration=duration, date=date, poster=poster,
+                              channel_id=_channel_id_from_image(poster))
             playlist.append(s)
 
         except AttributeError as e:
@@ -526,7 +568,8 @@ def _get_channel(cookies, channel, page, max_count=100):
             poster = n.find(class_="channel-videos-image").find("img").attrs['data-src']
 
             s = ChannelEntry(video_id=video_id, description=description, title=title,
-                             channel_name=channel, date=date, duration=duration, poster=poster)
+                             channel_name=channel, date=date, duration=duration, poster=poster,
+                             channel_id=_channel_id_from_image(poster))
             videos.append(s)
 
         except AttributeError as e:
@@ -577,7 +620,8 @@ def _get_feed_sub_legacy(params):
         chan = channel[0]  # The latest video
         feed_item = PlaylistEntry(video_id=chan.video_id, description=chan.description,
                                   title=chan.title, channel_name=sub.name, date=chan.date, duration=chan.duration,
-                                  poster=chan.poster, upvotes=chan.upvotes, downvotes=chan.downvotes)
+                                  poster=chan.poster, upvotes=chan.upvotes, downvotes=chan.downvotes,
+                                  channel_id=chan.channel_id)
     return feed_item
 
 def _get_feed_legacy(cookies):
@@ -615,7 +659,8 @@ def _build_channels_from_container(container):
             name = n.find(class_="channel-card-title").get_text()
 
             s = Subscription(name=name, channel=channel, description="",
-                             channel_image=channel_image)
+                             channel_image=channel_image,
+                             channel_id=_channel_id_from_image(channel_image))
             subs.append(s)
 
         except AttributeError as e:
@@ -790,7 +835,8 @@ def _search(cookies, query, page):
             continue
 
         r = SearchEntry(video_id=video_id, title=title, description=description,
-                        channel_name=channel_name, poster=poster)
+                        channel_name=channel_name, poster=poster,
+                        channel_id=_channel_id_from_image(poster))
         videos.append(r)
 
     _enrich_with_votes(cookies, videos)
@@ -808,7 +854,8 @@ def _search(cookies, query, page):
             continue
 
         channels.append(Subscription(name=name, channel=channel, description=description,
-                                     channel_image=poster, subscribers=subscribers))
+                                     channel_image=poster, subscribers=subscribers,
+                                     channel_id=result.get("id")))
 
     return pickle.dumps((channels, videos))
 
@@ -1025,6 +1072,24 @@ def _vote_comment(cookies, video_id, id, parent_id, creator, fullname, vote_type
         url = 'https://commentfreely.bitchute.com/api/vote_on_comment/'
         _post(url, data=post_data, headers=headers, cookies=cookies)
 
+def _toggle_subscription(cookies, channel_id):
+    """Toggle the subscription state of a channel.
+
+    Returns the site's JSON response, which carries ``success``, the new
+    ``state`` ("Subscribed" or "Subscribe") and the updated subscriber
+    ``count``.
+    """
+    url = f"https://old.bitchute.com/channel/{channel_id}/sub/"
+    post_data = {'csrfmiddlewaretoken': cookies['csrftoken']}
+    headers = {'referer': f"https://old.bitchute.com/channel/{channel_id}/",
+               "User-Agent": USER_AGENT}
+    response = _post(url, data=post_data, headers=headers, cookies=cookies)
+    try:
+        return response.json()
+    except ValueError:
+        xbmc.log("Subscription toggle for {} returned an unparseable response".format(channel_id))
+        return {}
+
 # Wrappers to ensure the subs, notifications, playlists are cached for 15 minutes
 
 def get_page(login, allow_cache, funct, *args):
@@ -1047,6 +1112,22 @@ def get_page(login, allow_cache, funct, *args):
 
 def get_subscriptions():
     return get_page(True, True, _get_subscriptions)
+
+def get_subscribed_channel_ids():
+    """Return the IDs of the channels the user is subscribed to."""
+    return {getattr(sub, 'channel_id', None) for sub in get_subscriptions()
+            if getattr(sub, 'channel_id', None)}
+
+def toggle_subscription(channel_id):
+    result = get_page(True, False, _toggle_subscription, channel_id)
+    if not isinstance(result, dict):
+        result = {}
+
+    if result.get("success"):
+        # The subscription listing and feed are cached, so drop them.
+        clear_cache(data=True)
+
+    return result
 
 def get_notifications(page):
     return get_page(True, True, _get_notifications, page)

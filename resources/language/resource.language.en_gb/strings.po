@@ -251,3 +251,27 @@ msgstr ""
 msgctxt "#30064"
 msgid "Previous page"
 msgstr ""
+
+msgctxt "#30065"
+msgid "Subscribe"
+msgstr ""
+
+msgctxt "#30066"
+msgid "Unsubscribe"
+msgstr ""
+
+msgctxt "#30067"
+msgid "Subscribed to channel"
+msgstr ""
+
+msgctxt "#30068"
+msgid "Unsubscribed from channel"
+msgstr ""
+
+msgctxt "#30069"
+msgid "Unable to update subscription"
+msgstr ""
+
+msgctxt "#30070"
+msgid "Bitchute did not accept the subscription change. Please try again."
+msgstr ""

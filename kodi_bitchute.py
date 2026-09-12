@@ -130,12 +130,14 @@ def search_pager(query, page):
     page = int(page)
     menu.start_folder()
     channels, videos = bitchute_access.search(query, str(page))
+    subscribed_ids = subscribed_channel_ids()
     for ch in channels:
         description = ch.description
         if ch.subscribers:
             description = loc(30063) + ": " + ch.subscribers + "\n\n" + description
         menu.new_folder_item(item_name=ch.name, description=description,
-                             iconURL=ch.channel_image, func=channel, item_val=ch.channel)
+                             iconURL=ch.channel_image, func=channel, item_val=ch.channel,
+                             context_menu=channel_context_menu(ch, subscribed_ids))
     entries_to_listitems(videos, finalize_folder=False, show_empty=(0 == len(channels)))
     has_next = len(channels) == bitchute_access.SEARCH_PAGE_SIZE or len(videos) == bitchute_access.SEARCH_PAGE_SIZE
     add_page_navigation(page, search_pager, has_next, query=query)
@@ -149,8 +151,43 @@ def clear_cache():
 def comments(video_id):
     w = CommentWindow(video_id=video_id)
 
+@plugin.route('/toggle_subscription/<item_val>')
+def toggle_subscription(item_val):
+    result = bitchute_access.toggle_subscription(item_val)
+
+    if result.get("success"):
+        if result.get("state") == "Subscribed":
+            notify(loc(30067))
+        else:
+            notify(loc(30068))
+        xbmc.executebuiltin('Container.Refresh')
+    else:
+        Dialog().ok(loc(30069), loc(30070))
+
 def loc(label):
     return(xbmcaddon.Addon().getLocalizedString(label))
+
+def notify(message):
+    Dialog().notification(addon.getAddonInfo('name'), message)
+
+def subscribed_channel_ids():
+    try:
+        return bitchute_access.get_subscribed_channel_ids()
+    except Exception as e:
+        xbmc.log("Could not determine subscribed channels: {}".format(e))
+        return set()
+
+def channel_context_menu(channel, subscribed_ids):
+    channel_id = getattr(channel, 'channel_id', None)
+    if not channel_id:
+        return None
+
+    if channel_id in subscribed_ids:
+        label = loc(30066)  # Unsubscribe
+    else:
+        label = loc(30065)  # Subscribe
+
+    return [(label, 'RunPlugin(%s)' % plugin.url_for(toggle_subscription, item_val=channel_id))]
 
 def add_page_navigation(page, func, has_next, has_previous=True, **kwargs):
     global menu
@@ -168,6 +205,7 @@ def entries_to_listitems(entries, finalize_folder=True, show_empty=True):
         if show_empty:
             menu.new_info_item(loc(30028))
     else:
+        subscribed_ids = None
         for n in entries:
             duration = None
             description = ""
@@ -202,6 +240,13 @@ def entries_to_listitems(entries, finalize_folder=True, show_empty=True):
             context_menu = []
             context_menu.append((loc(30039), 'RunPlugin(%s)' % plugin.url_for(comments, video_id=n.video_id)))
 
+            channel_id = getattr(n, 'channel_id', None)
+            if channel_id:
+                if subscribed_ids is None:
+                    subscribed_ids = subscribed_channel_ids()
+                label = loc(30066) if channel_id in subscribed_ids else loc(30065)
+                context_menu.append((label, 'RunPlugin(%s)' % plugin.url_for(toggle_subscription, item_val=channel_id)))
+
             menu.new_video_item(item_name=n.title, url=video_url,
                                 description=description, iconURL=poster, duration=duration,
                                 context_menu=context_menu)
@@ -235,9 +280,12 @@ def build_subscriptions():
     if 0 == len(subscriptions):
         menu.new_info_item(loc(30026))
     else:
+        subscribed_ids = {getattr(sub, 'channel_id', None) for sub in subscriptions}
         for sub in subscriptions:
             menu.new_folder_item(
-                item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image, description=sub.description)
+                item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image,
+                description=sub.description,
+                context_menu=channel_context_menu(sub, subscribed_ids))
 
     menu.end_folder()
 
@@ -250,9 +298,12 @@ def build_channels(page):
     if 0 == len(subs):
         menu.new_info_item(loc(30028))
     else:
+        subscribed_ids = subscribed_channel_ids()
         for sub in subs:
             menu.new_folder_item(
-                item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image, description=sub.description)
+                item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image,
+                description=sub.description,
+                context_menu=channel_context_menu(sub, subscribed_ids))
 
         add_page_navigation(page, channels_offset, len(subs) == bitchute_access.CHANNEL_PAGE_SIZE)
 

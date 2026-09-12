@@ -37,13 +37,17 @@ class KODIMenu():
         addDirectoryItem(self.h, url, listitem=li, isFolder=False)
 
 
-    def new_folder_item(self, item_name, description, iconURL, func, **kwargs):
+    def new_folder_item(self, item_name, description, iconURL, func, context_menu=None, **kwargs):
         li = ListItem(label=item_name)
         li.setIsFolder(True)
         li.setProperty('IsPlayable', 'False')
         li.getVideoInfoTag().setPlot(description)
         li.setArt({'icon': iconURL, 'poster': iconURL, 'thumb': iconURL,
                    'banner': iconURL, 'fanart' : iconURL})
+
+        if context_menu:
+            li.addContextMenuItems(context_menu)
+
         addDirectoryItem(self.h, self.plugin.url_for(func, **kwargs),
                          listitem=li, isFolder=True)
 
