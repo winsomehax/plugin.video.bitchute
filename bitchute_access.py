@@ -26,11 +26,12 @@ class VideoUnavailableError(Exception):
     pass
 
 class Subscription():
-    def __init__(self, name, channel, description, channel_image):
+    def __init__(self, name, channel, description, channel_image, subscribers=None):
         self.name = name
         self.channel = channel
         self.description = description
         self.channel_image = channel_image
+        self.subscribers = subscribers
 
 class Video():
     def __init__(self, video_id, video_url, poster, title):
@@ -143,6 +144,9 @@ CATEGORY_PAGE_SIZE = 24
 # Channels served per discovery page / per extend call.
 CHANNEL_PAGE_SIZE = 24
 
+# Results served per search page, per result kind (videos/channels).
+SEARCH_PAGE_SIZE = 10
+
 # Parallel workers used to fetch per-video vote counts.
 VOTE_FETCH_WORKERS = 8
 
@@ -247,6 +251,12 @@ def _get_notifications(cookies):
             xbmc.log(str(n))
 
     return pickle.dumps(notifs)
+
+def _strip_html(text):
+    """Return plain text for a snippet of Bitchute HTML."""
+    if not text:
+        return ""
+    return BeautifulSoup(text, "html.parser").get_text(" ", strip=True)
 
 def _get_video_counts(cookies, video_id):
     """Fetch the upvote/downvote counts for a video.
@@ -636,6 +646,41 @@ def _get_video(cookies, video_id):
     return pickle.dumps(Video(video_id=video_id, video_url=media_url, poster=thumbnail_url,
                   title=video_name))
 
+def _search_api(cookies, query, page, kind, timestamp, nonce, csrf):
+    """Request one page of search results of a single kind.
+
+    Bitchute rotates the timestamp/nonce pair on every response, so the
+    updated pair is returned for the next call.
+    """
+    url = "https://old.bitchute.com/api/search/list/"
+    post_data = {
+            'csrfmiddlewaretoken': csrf,
+            'timestamp' : timestamp,
+            'nonce': nonce,
+            'query': query,
+            'kind': kind,
+            'duration': '',
+            'sort': 'new',
+            'page': page,
+            }
+    headers = {
+            'referer': "https://old.bitchute.com/search/",
+            'origin': "https://old.bitchute.com",
+            "User-Agent": USER_AGENT,
+            }
+    response = _post(url, data=post_data, headers=headers, cookies=cookies)
+    try:
+        val = json.loads(response.text)
+    except ValueError as e:
+        xbmc.log("Search returned an unparseable response: " + str(e))
+        return [], timestamp, nonce
+
+    if not val.get("success"):
+        xbmc.log("Search request failed: " + str(val.get("error")))
+        return [], timestamp, nonce
+
+    return val.get("results", []), val.get("timestamp", timestamp), val.get("nonce", nonce)
+
 def _search(cookies, query, page):
     # Extract timestamp and nonce parameters from searchAuth function
     # embedded in the search HTML page. A new timestamp, nonce pair
@@ -655,41 +700,26 @@ def _search(cookies, query, page):
 
     if start == -1 or end == -1:
         xbmc.log("Could not locate searchAuth parameters; search is unavailable.")
-        return pickle.dumps([])
+        return pickle.dumps(([], []))
 
     params = text[start:end].split(',', 2)
     if len(params) < 2:
         xbmc.log("Unexpected searchAuth parameter count; search is unavailable.")
-        return pickle.dumps([])
+        return pickle.dumps(([], []))
 
     timestamp = params[0].strip()[1:-1]
     nonce = params[1].strip()[1:-1]
+    csrf = response.cookies['csrftoken']
 
-    url = "https://old.bitchute.com/api/search/list/"
-    post_data = {
-            'csrfmiddlewaretoken': response.cookies['csrftoken'],
-            'timestamp' : timestamp,
-            'nonce': nonce,
-            'query': query,
-            'kind': 'video',
-            'duration': '',
-            'sort': 'new',
-            'page': page,
-            }
-    headers = {
-            'referer': "https://old.bitchute.com/search/",
-            'origin': "https://old.bitchute.com",
-            "User-Agent": USER_AGENT,
-            }
-    response = _post(url, data=post_data, headers=headers, cookies=response.cookies)
-    try:
-        val = json.loads(response.text)
-    except ValueError as e:
-        xbmc.log("Search returned an unparseable response: " + str(e))
-        return pickle.dumps([])
+    # Each response rotates the timestamp/nonce pair, so the channel
+    # request must reuse the pair returned by the video request.
+    raw_videos, timestamp, nonce = _search_api(response.cookies, query, page, 'video',
+                                               timestamp, nonce, csrf)
+    raw_channels, timestamp, nonce = _search_api(response.cookies, query, page, 'channel',
+                                                 timestamp, nonce, csrf)
 
-    results = []
-    for result in val.get("results", []):
+    videos = []
+    for result in raw_videos:
         try:
             video_id = result["id"]
             title = result["name"]
@@ -702,11 +732,26 @@ def _search(cookies, query, page):
 
         r = SearchEntry(video_id=video_id, title=title, description=description,
                         channel_name=channel_name, poster=poster)
-        results.append(r)
+        videos.append(r)
 
-    _enrich_with_votes(cookies, results)
+    _enrich_with_votes(cookies, videos)
 
-    return pickle.dumps(results)
+    channels = []
+    for result in raw_channels:
+        try:
+            name = result["name"]
+            channel = result["path"].replace("/channel/", "").rstrip("/")
+            description = _strip_html(result.get("description"))
+            poster = result["images"]["thumbnail"]
+            subscribers = result.get("subscribers")
+        except (KeyError, TypeError, AttributeError) as e:
+            xbmc.log("Skipping malformed channel search result: " + str(e))
+            continue
+
+        channels.append(Subscription(name=name, channel=channel, description=description,
+                                     channel_image=poster, subscribers=subscribers))
+
+    return pickle.dumps((channels, videos))
 
 # Equivalent to the EncodeCommentText() JS function used by Bitchute to encode text
 def custom_escape_and_b64encode(e):
@@ -970,7 +1015,10 @@ def get_feed():
     return get_page(True, True, get_feed_func)
 
 def search(query, page):
-    return get_page(True, True, _search, query, page)
+    result = get_page(True, True, _search, query, page)
+    if not result:
+        return [], []
+    return result
 
 def get_recently_active(page):
     return get_page(True, True, _get_recently_active, page)

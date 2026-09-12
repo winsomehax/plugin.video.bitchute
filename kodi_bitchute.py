@@ -107,9 +107,15 @@ def search_pager(query, page):
     query = unquote_plus(query)
     page = int(page)
     menu.start_folder()
-    entries = bitchute_access.search(query, str(page))
-    entries_to_listitems(entries, finalize_folder=False)
-    if len(entries) == 10:
+    channels, videos = bitchute_access.search(query, str(page))
+    for ch in channels:
+        description = ch.description
+        if ch.subscribers:
+            description = loc(30063) + ": " + ch.subscribers + "\n\n" + description
+        menu.new_folder_item(item_name=ch.name, description=description,
+                             iconURL=ch.channel_image, func=channel, item_val=ch.channel)
+    entries_to_listitems(videos, finalize_folder=False, show_empty=(0 == len(channels)))
+    if len(channels) == bitchute_access.SEARCH_PAGE_SIZE or len(videos) == bitchute_access.SEARCH_PAGE_SIZE:
         menu.new_folder_item(loc(30035), loc(30035),
                              None, search_pager, query=query, page=page+1) # Next page
     menu.end_folder()
@@ -125,13 +131,14 @@ def comments(video_id):
 def loc(label):
     return(xbmcaddon.Addon().getLocalizedString(label))
 
-def entries_to_listitems(entries, finalize_folder=True):
+def entries_to_listitems(entries, finalize_folder=True, show_empty=True):
     global menu
     if finalize_folder:
         menu.start_folder()
 
     if 0 == len(entries):
-        menu.new_info_item(loc(30028))
+        if show_empty:
+            menu.new_info_item(loc(30028))
     else:
         for n in entries:
             duration = None
