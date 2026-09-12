@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.bitchute" name="bitchute" version="2.5.0" provider-name="MasterSlave">
+<addon id="plugin.video.bitchute" name="bitchute" version="2.6.0" provider-name="MasterSlave">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.routing" version="0.2.0"/>
@@ -25,7 +25,15 @@
             <icon>resources/icon.png</icon>
             <fanart>resources/fanart.jpg</fanart>
         </assets>
-		<news>v2.5.0 (01/01/26)
+		<news>v2.6.0 (09/11/26)
+[feature] Feature #34 - Add channel discovery (browse Bitchute channels)
+[feature] Feature #33 - Add Bitchute category browsing
+[fix] Fix rate-limit backoff and preserve cookies on retry
+[fix] Fix crashes on malformed subscriptions/comments/empty channels
+[fix] Harden proxy shutdown, login cache invalidation, settings handling
+[fix] Python 3.9 compatibility and localization fixes
+[fix] Replace fanart with official BitChute logo
+v2.5.0 (01/01/26)
 [feature] Feature #32 - Add comments
 [fix] Fixed legacy feed behavior
 v2.4.3 (06/25/25)
