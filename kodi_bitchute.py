@@ -139,6 +139,8 @@ def entries_to_listitems(entries, finalize_folder=True):
             poster = iconURL
             if not isinstance(n, bitchute_access.NotificationEntry):
                 description += "[B]" + n.channel_name + "[/B]\n"
+                if getattr(n, 'upvotes', None) is not None:
+                    description += "[COLOR=orange]" + str(n.upvotes) + "/" + str(n.downvotes) + "[/COLOR]\n"
                 if not isinstance(n, bitchute_access.SearchEntry):
                     description += loc(30058) + ": " + n.date + "\n"
 

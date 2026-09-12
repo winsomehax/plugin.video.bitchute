@@ -4,6 +4,7 @@ import json
 import pickle
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 import xbmcaddon
@@ -45,15 +46,19 @@ class NotificationEntry():
         self.description = description
 
 class SearchEntry():
-    def __init__(self, video_id, description, title, poster, channel_name):
+    def __init__(self, video_id, description, title, poster, channel_name,
+                 upvotes=None, downvotes=None):
         self.video_id = video_id
         self.title = title
         self.description = description
         self.poster = poster
         self.channel_name = channel_name
+        self.upvotes = upvotes
+        self.downvotes = downvotes
 
 class ChannelEntry():
-    def __init__(self, video_id, title, description, channel_name=u"", date=0, duration=0, poster=""):
+    def __init__(self, video_id, title, description, channel_name=u"", date=0, duration=0, poster="",
+                 upvotes=None, downvotes=None):
         self.video_id = video_id
         self.title = title
         self.description = description
@@ -61,9 +66,12 @@ class ChannelEntry():
         self.date = date
         self.duration = duration
         self.poster = poster
+        self.upvotes = upvotes
+        self.downvotes = downvotes
 
 class PlaylistEntry():
-    def __init__(self, video_id, description, title, channel_name=u"", duration=u"", date=u"", poster=""):
+    def __init__(self, video_id, description, title, channel_name=u"", duration=u"", date=u"", poster="",
+                 upvotes=None, downvotes=None):
         self.video_id = video_id
         self.title = title
         self.description = description
@@ -71,6 +79,8 @@ class PlaylistEntry():
         self.date = date
         self.duration = duration
         self.poster = poster
+        self.upvotes = upvotes
+        self.downvotes = downvotes
 
 class CommentEntry():
     def __init__(self, id, parent_id, creator, fullname, content, upvote_count, downvote_count, user_vote, profile_picture_url, created_by_current_user):
@@ -132,6 +142,9 @@ CATEGORY_PAGE_SIZE = 24
 
 # Channels served per discovery page / per extend call.
 CHANNEL_PAGE_SIZE = 24
+
+# Parallel workers used to fetch per-video vote counts.
+VOTE_FETCH_WORKERS = 8
 
 def _get(url, cookies=[], headers=DEFAULT_HEADERS):
     resp = _session.get(url, cookies=cookies, timeout=REQUEST_TIMEOUT, headers=headers)
@@ -235,7 +248,77 @@ def _get_notifications(cookies):
 
     return pickle.dumps(notifs)
 
-def _build_playlist_from_container(container):
+def _get_video_counts(cookies, video_id):
+    """Fetch the upvote/downvote counts for a video.
+
+    Returns ``(upvotes, downvotes)``, or ``(None, None)`` when the counts
+    are unavailable so callers can omit them from the description.
+    """
+    try:
+        token = cookies.get('csrftoken')
+    except AttributeError:
+        token = None
+
+    if not token:
+        token = _session.cookies.get('csrftoken')
+
+    if not token:
+        # The counts endpoint only needs a CSRF token, not a login.
+        resp = _get("https://old.bitchute.com/")
+        token = resp.cookies.get('csrftoken') or _session.cookies.get('csrftoken')
+
+    if not token:
+        xbmc.log("No CSRF token available; skipping vote counts for " + video_id)
+        return None, None
+
+    url = f"https://old.bitchute.com/video/{video_id}/counts/"
+    post_data = {'csrfmiddlewaretoken': token}
+    headers = {'referer': f"https://old.bitchute.com/video/{video_id}/",
+               "User-Agent": USER_AGENT}
+
+    backoff = 1
+    try:
+        response = _post(url, data=post_data, headers=headers, cookies=cookies)
+        while response.status_code == 429 and backoff <= 4:
+            xbmc.log("Vote counts rate limited. Backing off for {} seconds".format(backoff))
+            xbmc.sleep(backoff * 1000)
+            backoff *= 2
+            response = _post(url, data=post_data, headers=headers, cookies=cookies)
+    except requests.RequestException as e:
+        xbmc.log("Could not fetch vote counts for {}: {}".format(video_id, e))
+        return None, None
+
+    if response.status_code != 200:
+        xbmc.log("Vote counts request for {} returned {}".format(video_id, response.status_code))
+        return None, None
+
+    try:
+        result = json.loads(response.text)
+    except ValueError:
+        xbmc.log("Vote counts for {} returned an unparseable response".format(video_id))
+        return None, None
+
+    if not result.get("success"):
+        return None, None
+
+    return result.get("like_count"), result.get("dislike_count")
+
+def _enrich_with_votes(cookies, entries):
+    """Add upvote/downvote counts to each entry, fetching them in parallel."""
+    if not entries:
+        return entries
+
+    with ThreadPoolExecutor(max_workers=VOTE_FETCH_WORKERS) as pool:
+        counts = list(pool.map(
+            lambda entry: _get_video_counts(cookies, entry.video_id), entries))
+
+    for entry, (upvotes, downvotes) in zip(entries, counts):
+        entry.upvotes = upvotes
+        entry.downvotes = downvotes
+
+    return entries
+
+def _build_playlist_from_container(container, cookies):
     """Parse a list of ``.video-card`` elements (e.g. a listing-* tab or an
     ``extend`` response fragment) into a pickled list of PlaylistEntry."""
     containers = container.find_all(class_="video-card")
@@ -260,17 +343,18 @@ def _build_playlist_from_container(container):
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
             xbmc.log(str(n))
 
+    _enrich_with_votes(cookies, playlist)
+
     return pickle.dumps(playlist)
 
 def _build_playlist_common(listing_id, cookies):
     url = "https://old.bitchute.com/"
     resp = _get(url, cookies=cookies)
-    cookies = resp.cookies
 
     soup = BeautifulSoup(resp.text, "html.parser")
     popular = soup.find(id=listing_id)
 
-    return _build_playlist_from_container(popular)
+    return _build_playlist_from_container(popular, cookies)
 
 def _get_popular(cookies):
     return _build_playlist_common("listing-popular", cookies)
@@ -306,6 +390,8 @@ def _get_trending(cookies):
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
             xbmc.log(str(n))
 
+    _enrich_with_votes(cookies, playlist)
+
     return pickle.dumps(playlist)
 
 def _get_playlist(cookies, playlist_name):
@@ -333,6 +419,8 @@ def _get_playlist(cookies, playlist_name):
         except AttributeError as e:
             xbmc.log("**************** ATTRIBUTE_ERROR " + str(e))
             xbmc.log(str(n))
+
+    _enrich_with_votes(cookies, playlist)
 
     return pickle.dumps(playlist)
 
@@ -378,6 +466,8 @@ def _get_channel(cookies, channel, page, max_count=100):
 
         count = count + 1
 
+    _enrich_with_votes(cookies, videos)
+
     return pickle.dumps(videos)
 
 def _get_category(cookies, category, page):
@@ -407,7 +497,7 @@ def _get_category(cookies, category, page):
     if container is None:
         return pickle.dumps([])
 
-    return _build_playlist_from_container(container)
+    return _build_playlist_from_container(container, cookies)
 
 
 def _get_feed_sub_legacy(params):
@@ -417,7 +507,8 @@ def _get_feed_sub_legacy(params):
     if len(channel) > 0:
         chan = channel[0]  # The latest video
         feed_item = PlaylistEntry(video_id=chan.video_id, description=chan.description,
-                                  title=chan.title, channel_name=sub.name, date=chan.date, duration=chan.duration, poster=chan.poster)
+                                  title=chan.title, channel_name=sub.name, date=chan.date, duration=chan.duration,
+                                  poster=chan.poster, upvotes=chan.upvotes, downvotes=chan.downvotes)
     return feed_item
 
 def _get_feed_legacy(cookies):
@@ -612,6 +703,8 @@ def _search(cookies, query, page):
         r = SearchEntry(video_id=video_id, title=title, description=description,
                         channel_name=channel_name, poster=poster)
         results.append(r)
+
+    _enrich_with_votes(cookies, results)
 
     return pickle.dumps(results)
 
