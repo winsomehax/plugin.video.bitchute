@@ -1,0 +1,3 @@
+make_archive.sh export-ignore
+.gitattributes export-ignore
+.gitignore export-ignore
