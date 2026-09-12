@@ -147,6 +147,15 @@ CHANNEL_PAGE_SIZE = 24
 # Results served per search page, per result kind (videos/channels).
 SEARCH_PAGE_SIZE = 10
 
+# Videos served per homepage listing (popular/subscribed) extend call.
+LISTING_PAGE_SIZE = 24
+
+# Notifications served per page / per extend call.
+NOTIFICATION_PAGE_SIZE = 10
+
+# Videos served per playlist page / per extend call.
+PLAYLIST_PAGE_SIZE = 10
+
 # Parallel workers used to fetch per-video vote counts.
 VOTE_FETCH_WORKERS = 8
 
@@ -230,11 +239,26 @@ def _get_subscriptions(cookies):
 
     return pickle.dumps(subs)
 
-def _get_notifications(cookies):
-    url = "https://old.bitchute.com/notifications/"
-    resp = _get(url, cookies=cookies)
+def _get_notifications(cookies, page):
+    """Return one page (NOTIFICATION_PAGE_SIZE notifications).
 
-    soup = BeautifulSoup(resp.text, "html.parser")
+    Page 0 fetches ``/notifications/``. Later pages POST to
+    ``/notifications/extend/`` (the AJAX mechanism behind the site's
+    "SHOW MORE" button) and parse the returned HTML fragment.
+    """
+    referer = "https://old.bitchute.com/notifications/"
+
+    if page == 0:
+        resp = _get(referer, cookies=cookies)
+        soup = BeautifulSoup(resp.text, "html.parser")
+    else:
+        token = cookies['csrftoken']
+        post_data = {'csrfmiddlewaretoken': token, 'offset': page * NOTIFICATION_PAGE_SIZE}
+        headers = {'referer': referer, "User-Agent": USER_AGENT}
+        response = _post(referer + "extend/", data=post_data, headers=headers, cookies=cookies)
+        resp = json.loads(response.text)
+        soup = BeautifulSoup(resp["html"], "html.parser")
+
     containers = soup.find_all(class_="notification-item")
 
     notifs = []
@@ -372,6 +396,26 @@ def _get_popular(cookies):
 def _get_feed(cookies):
     return _build_playlist_common("listing-subscribed", cookies)
 
+def _get_listing_extend(cookies, name, last):
+    """Return the next page (LISTING_PAGE_SIZE videos) of a homepage listing.
+
+    ``name`` selects the listing tab (``popular`` or ``subscribed``) and
+    ``last`` is the video id of the final card currently displayed. The site
+    paginates these listings with that cursor; the ``offset`` field is only
+    used by its JavaScript to decide whether to keep the "SHOW MORE" button
+    visible.
+    """
+    token = cookies['csrftoken']
+    post_data = {'csrfmiddlewaretoken': token, 'name': name,
+                 'offset': LISTING_PAGE_SIZE, 'last': last}
+    headers = {'referer': "https://old.bitchute.com/", "User-Agent": USER_AGENT}
+    response = _post("https://old.bitchute.com/extend/", data=post_data,
+                     headers=headers, cookies=cookies)
+    resp = json.loads(response.text)
+    container = BeautifulSoup(resp["html"], "html.parser")
+
+    return _build_playlist_from_container(container, cookies)
+
 def _get_trending(cookies):
     url = "https://old.bitchute.com/"
     resp = _get(url, cookies=cookies)
@@ -404,11 +448,26 @@ def _get_trending(cookies):
 
     return pickle.dumps(playlist)
 
-def _get_playlist(cookies, playlist_name):
-    url = "https://old.bitchute.com/playlist/"+playlist_name+"/"
-    resp = _get(url, cookies=cookies)
+def _get_playlist(cookies, playlist_name, page):
+    """Return one page (PLAYLIST_PAGE_SIZE videos) of a playlist.
 
-    soup = BeautifulSoup(resp.text, "html.parser")
+    Page 0 fetches ``/playlist/<name>/``. Later pages POST to
+    ``/playlist/<name>/extend/`` (the AJAX mechanism behind the site's
+    "SHOW MORE" button) and parse the returned HTML fragment.
+    """
+    referer = "https://old.bitchute.com/playlist/"+playlist_name+"/"
+
+    if page == 0:
+        resp = _get(referer, cookies=cookies)
+        soup = BeautifulSoup(resp.text, "html.parser")
+    else:
+        token = cookies['csrftoken']
+        post_data = {'csrfmiddlewaretoken': token, 'offset': page * PLAYLIST_PAGE_SIZE}
+        headers = {'referer': referer, "User-Agent": USER_AGENT}
+        response = _post(referer + "extend/", data=post_data, headers=headers, cookies=cookies)
+        resp = json.loads(response.text)
+        soup = BeautifulSoup(resp["html"], "html.parser")
+
     containers = soup.find_all(class_="playlist-video")
 
     playlist = []
@@ -989,11 +1048,11 @@ def get_page(login, allow_cache, funct, *args):
 def get_subscriptions():
     return get_page(True, True, _get_subscriptions)
 
-def get_notifications():
-    return get_page(True, True, _get_notifications)
+def get_notifications(page):
+    return get_page(True, True, _get_notifications, page)
 
-def get_playlist(playlist):
-    return get_page(True, True, _get_playlist, playlist)
+def get_playlist(playlist, page):
+    return get_page(True, True, _get_playlist, playlist, page)
 
 def get_channel(channel, page, max_count=100):
     return get_page(True, True, _get_channel, channel, page, max_count)
@@ -1001,18 +1060,20 @@ def get_channel(channel, page, max_count=100):
 def get_category(category, page):
     return get_page(True, True, _get_category, category, page)
 
-def get_popular():
-    return get_page(True, True, _get_popular)
+def get_popular(page, last=None):
+    if page == 0:
+        return get_page(True, True, _get_popular)
+    return get_page(True, True, _get_listing_extend, "popular", last)
 
 def get_trending():
     return get_page(True, True, _get_trending)
 
-def get_feed():
+def get_feed(page, last=None):
     if xbmcaddon.Addon().getSettingBool("legacy_feed_behavior"):
-        get_feed_func = _get_feed_legacy
-    else:
-        get_feed_func = _get_feed
-    return get_page(True, True, get_feed_func)
+        return get_page(True, True, _get_feed_legacy)
+    if page == 0:
+        return get_page(True, True, _get_feed)
+    return get_page(True, True, _get_listing_extend, "subscribed", last)
 
 def search(query, page):
     result = get_page(True, True, _search, query, page)

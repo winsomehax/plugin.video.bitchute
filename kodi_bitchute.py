@@ -23,19 +23,35 @@ def subscriptions():
 
 @plugin.route('/notifications')
 def notifications():
-    build_notifications()
+    build_notifications(0)
+
+@plugin.route('/notifications_offset')
+def notifications_offset():
+    page = int(plugin.args['page'][0])
+    build_notifications(page)
 
 @plugin.route('/favourites')
 def favourites():
-    build_playlist("favorites")
+    build_playlist("favorites", 0)
 
 @plugin.route('/watch-later')
 def watch_later():
-    build_playlist("watch-later")
+    build_playlist("watch-later", 0)
+
+@plugin.route('/playlist_offset/<item_val>')
+def playlist_offset(item_val):
+    page = int(plugin.args['page'][0])
+    build_playlist(item_val, page)
 
 @plugin.route('/popular')
 def popular():
-    build_popular()
+    build_popular(0)
+
+@plugin.route('/popular_offset')
+def popular_offset():
+    page = int(plugin.args['page'][0])
+    last = plugin.args['last'][0]
+    build_popular(page, last)
 
 @plugin.route('/trending')
 def trending():
@@ -55,7 +71,13 @@ def play_now(item_val):
 
 @plugin.route('/feed/')
 def feed():
-    build_feed()
+    build_feed(0)
+
+@plugin.route('/feed_offset')
+def feed_offset():
+    page = int(plugin.args['page'][0])
+    last = plugin.args['last'][0]
+    build_feed(page, last)
 
 @plugin.route('/channel/<item_val>')
 def channel(item_val):
@@ -63,8 +85,8 @@ def channel(item_val):
 
 @plugin.route('/channel_offset/<item_val>')
 def channel_offset(item_val):
-    item_val2=int(plugin.args['item_val2'][0])
-    build_a_channel(item_val, item_val2)
+    page = int(plugin.args['page'][0])
+    build_a_channel(item_val, page)
 
 @plugin.route('/categories')
 def categories():
@@ -76,8 +98,8 @@ def category(item_val):
 
 @plugin.route('/category_offset/<item_val>')
 def category_offset(item_val):
-    item_val2=int(plugin.args['item_val2'][0])
-    build_a_category(item_val, item_val2)
+    page = int(plugin.args['page'][0])
+    build_a_category(item_val, page)
 
 @plugin.route('/channels')
 def channels():
@@ -115,9 +137,8 @@ def search_pager(query, page):
         menu.new_folder_item(item_name=ch.name, description=description,
                              iconURL=ch.channel_image, func=channel, item_val=ch.channel)
     entries_to_listitems(videos, finalize_folder=False, show_empty=(0 == len(channels)))
-    if len(channels) == bitchute_access.SEARCH_PAGE_SIZE or len(videos) == bitchute_access.SEARCH_PAGE_SIZE:
-        menu.new_folder_item(loc(30035), loc(30035),
-                             None, search_pager, query=query, page=page+1) # Next page
+    has_next = len(channels) == bitchute_access.SEARCH_PAGE_SIZE or len(videos) == bitchute_access.SEARCH_PAGE_SIZE
+    add_page_navigation(page, search_pager, has_next, query=query)
     menu.end_folder()
 
 @plugin.route('/clear_cache')
@@ -130,6 +151,13 @@ def comments(video_id):
 
 def loc(label):
     return(xbmcaddon.Addon().getLocalizedString(label))
+
+def add_page_navigation(page, func, has_next, has_previous=True, **kwargs):
+    global menu
+    if has_previous and page > 0:
+        menu.new_folder_item(loc(30064), loc(30064), None, func, page=page-1, **kwargs) # Previous page
+    if has_next:
+        menu.new_folder_item(loc(30035), loc(30035), None, func, page=page+1, **kwargs) # Next page
 
 def entries_to_listitems(entries, finalize_folder=True, show_empty=True):
     global menu
@@ -226,14 +254,21 @@ def build_channels(page):
             menu.new_folder_item(
                 item_name=sub.name, func=channel, item_val=sub.channel, iconURL=sub.channel_image, description=sub.description)
 
-        if len(subs) == bitchute_access.CHANNEL_PAGE_SIZE:
-            menu.new_folder_item(loc(30035), loc(30035),
-                                 None, channels_offset, page=page+1) # Next page
+        add_page_navigation(page, channels_offset, len(subs) == bitchute_access.CHANNEL_PAGE_SIZE)
 
     menu.end_folder()
 
-def build_notifications():
-    entries_to_listitems(bitchute_access.get_notifications())
+def build_notifications(page):
+    global menu
+    menu.start_folder()
+
+    notifications = bitchute_access.get_notifications(page)
+
+    entries_to_listitems(notifications, finalize_folder=False)
+
+    add_page_navigation(page, notifications_offset, len(notifications) == bitchute_access.NOTIFICATION_PAGE_SIZE)
+
+    menu.end_folder()
 
 def build_a_channel(item_val, page):
     global menu
@@ -243,8 +278,7 @@ def build_a_channel(item_val, page):
 
     entries_to_listitems(videos, finalize_folder=False)
 
-    if len(videos)==25:
-        menu.new_folder_item(loc(30035), loc(30035), None, channel_offset, item_val=item_val, item_val2=page+1) # Next page
+    add_page_navigation(page, channel_offset, len(videos) == 25, item_val=item_val)
 
     menu.end_folder()
 
@@ -266,19 +300,47 @@ def build_a_category(item_val, page):
 
     entries_to_listitems(videos, finalize_folder=False)
 
-    if len(videos) == bitchute_access.CATEGORY_PAGE_SIZE:
-        menu.new_folder_item(loc(30035), loc(30035), None, category_offset, item_val=item_val, item_val2=page+1) # Next page
+    add_page_navigation(page, category_offset, len(videos) == bitchute_access.CATEGORY_PAGE_SIZE, item_val=item_val)
 
     menu.end_folder()
 
-def build_playlist(playlist):
-    entries_to_listitems(bitchute_access.get_playlist(playlist))
+def build_playlist(playlist, page):
+    global menu
+    menu.start_folder()
 
-def build_feed():
-    entries_to_listitems(bitchute_access.get_feed())
+    entries = bitchute_access.get_playlist(playlist, page)
 
-def build_popular():
-    entries_to_listitems(bitchute_access.get_popular())
+    entries_to_listitems(entries, finalize_folder=False)
+
+    add_page_navigation(page, playlist_offset, len(entries) == bitchute_access.PLAYLIST_PAGE_SIZE, item_val=playlist)
+
+    menu.end_folder()
+
+def build_feed(page, last=None):
+    global menu
+    menu.start_folder()
+
+    entries = bitchute_access.get_feed(page, last)
+
+    entries_to_listitems(entries, finalize_folder=False)
+
+    if not addon.getSettingBool("legacy_feed_behavior") and len(entries) == bitchute_access.LISTING_PAGE_SIZE:
+        add_page_navigation(page, feed_offset, True, has_previous=False, last=entries[-1].video_id)
+
+    menu.end_folder()
+
+def build_popular(page, last=None):
+    global menu
+    menu.start_folder()
+
+    entries = bitchute_access.get_popular(page, last)
+
+    entries_to_listitems(entries, finalize_folder=False)
+
+    if len(entries) == bitchute_access.LISTING_PAGE_SIZE:
+        add_page_navigation(page, popular_offset, True, has_previous=False, last=entries[-1].video_id)
+
+    menu.end_folder()
 
 def build_trending():
     entries_to_listitems(bitchute_access.get_trending())

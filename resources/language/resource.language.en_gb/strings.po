@@ -247,3 +247,7 @@ msgstr ""
 msgctxt "#30063"
 msgid "Subscribers"
 msgstr ""
+
+msgctxt "#30064"
+msgid "Previous page"
+msgstr ""
