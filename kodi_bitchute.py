@@ -151,6 +151,18 @@ def clear_cache():
 def comments(video_id):
     w = CommentWindow(video_id=video_id)
 
+@plugin.route('/vote_video/<item_val>/<vote_type>')
+def vote_video(item_val, vote_type):
+    # The backend records the vote and its count adjustment locally. The
+    # refresh only re-renders the listing (the data cache is kept), so the
+    # adjusted count appears without re-fetching the whole listing.
+    result = bitchute_access.vote_video(item_val, vote_type)
+
+    if result.get("success"):
+        xbmc.executebuiltin('Container.Refresh')
+    else:
+        Dialog().ok(loc(30073), loc(30074))
+
 @plugin.route('/toggle_subscription/<item_val>')
 def toggle_subscription(item_val):
     result = bitchute_access.toggle_subscription(item_val)
@@ -211,9 +223,19 @@ def entries_to_listitems(entries, finalize_folder=True, show_empty=True):
             description = ""
             poster = iconURL
             if not isinstance(n, bitchute_access.NotificationEntry):
+                if getattr(n, 'upvotes', None) is not None:
+                    n.upvotes, n.downvotes, n.user_vote = bitchute_access.apply_vote_adjustment(
+                        n.video_id, n.upvotes, n.downvotes, getattr(n, 'user_vote', 0))
                 description += "[B]" + n.channel_name + "[/B]\n"
                 if getattr(n, 'upvotes', None) is not None:
-                    description += "[COLOR=orange]" + str(n.upvotes) + "/" + str(n.downvotes) + "[/COLOR]\n"
+                    upvotes = str(n.upvotes)
+                    downvotes = str(n.downvotes)
+                    user_vote = getattr(n, 'user_vote', 0)
+                    if user_vote == 1:
+                        upvotes = "[COLOR=green]" + upvotes + "[/COLOR]"
+                    elif user_vote == -1:
+                        downvotes = "[COLOR=red]" + downvotes + "[/COLOR]"
+                    description += "[COLOR=orange]" + upvotes + "/" + downvotes + "[/COLOR]\n"
                 if not isinstance(n, bitchute_access.SearchEntry):
                     description += loc(30058) + ": " + n.date + "\n"
 
@@ -239,6 +261,17 @@ def entries_to_listitems(entries, finalize_folder=True, show_empty=True):
 
             context_menu = []
             context_menu.append((loc(30039), 'RunPlugin(%s)' % plugin.url_for(comments, video_id=n.video_id)))
+
+            user_vote = getattr(n, 'user_vote', 0)
+            if user_vote == 1:
+                vote_items = ((30040, 'clear'), (30042, 'dislike'))
+            elif user_vote == -1:
+                vote_items = ((30041, 'like'), (30040, 'clear'))
+            else:
+                vote_items = ((30041, 'like'), (30042, 'dislike'))
+            for vote_label, vote_type in vote_items:
+                context_menu.append((loc(vote_label), 'RunPlugin(%s)' % plugin.url_for(
+                    vote_video, item_val=n.video_id, vote_type=vote_type)))
 
             channel_id = getattr(n, 'channel_id', None)
             if channel_id:

@@ -14,7 +14,7 @@ from urllib3.util.retry import Retry
 from xbmcgui import Dialog
 import xbmc
 
-from cache import data_cache, login_cache
+from cache import data_cache, login_cache, reaction_cache
 from comment_window import CommentWindow
 
 USER_AGENT = "Bitchute Kodi-Addon/1"
@@ -52,7 +52,7 @@ class NotificationEntry():
 
 class SearchEntry():
     def __init__(self, video_id, description, title, poster, channel_name,
-                 upvotes=None, downvotes=None, channel_id=None):
+                 upvotes=None, downvotes=None, channel_id=None, user_vote=0):
         self.video_id = video_id
         self.title = title
         self.description = description
@@ -61,10 +61,11 @@ class SearchEntry():
         self.upvotes = upvotes
         self.downvotes = downvotes
         self.channel_id = channel_id
+        self.user_vote = user_vote
 
 class ChannelEntry():
     def __init__(self, video_id, title, description, channel_name=u"", date=0, duration=0, poster="",
-                 upvotes=None, downvotes=None, channel_id=None):
+                 upvotes=None, downvotes=None, channel_id=None, user_vote=0):
         self.video_id = video_id
         self.title = title
         self.description = description
@@ -75,10 +76,11 @@ class ChannelEntry():
         self.upvotes = upvotes
         self.downvotes = downvotes
         self.channel_id = channel_id
+        self.user_vote = user_vote
 
 class PlaylistEntry():
     def __init__(self, video_id, description, title, channel_name=u"", duration=u"", date=u"", poster="",
-                 upvotes=None, downvotes=None, channel_id=None):
+                 upvotes=None, downvotes=None, channel_id=None, user_vote=0):
         self.video_id = video_id
         self.title = title
         self.description = description
@@ -89,6 +91,7 @@ class PlaylistEntry():
         self.upvotes = upvotes
         self.downvotes = downvotes
         self.channel_id = channel_id
+        self.user_vote = user_vote
 
 class CommentEntry():
     def __init__(self, id, parent_id, creator, fullname, content, upvote_count, downvote_count, user_vote, profile_picture_url, created_by_current_user):
@@ -163,8 +166,14 @@ NOTIFICATION_PAGE_SIZE = 10
 # Videos served per playlist page / per extend call.
 PLAYLIST_PAGE_SIZE = 10
 
-# Parallel workers used to fetch per-video vote counts.
-VOTE_FETCH_WORKERS = 8
+# Parallel workers used to fetch per-video vote counts and reactions. The
+# beta API verifies credentials per request, so reactions benefit from more
+# concurrency.
+VOTE_FETCH_WORKERS = 16
+
+# Seconds a per-video reaction is cached. Matches the data cache so listings
+# are rebuilt with the same reaction state they were enriched with.
+REACTION_CACHE_TTL = 900
 
 def _get(url, cookies=[], headers=DEFAULT_HEADERS):
     resp = _session.get(url, cookies=cookies, timeout=REQUEST_TIMEOUT, headers=headers)
@@ -174,6 +183,12 @@ def _get(url, cookies=[], headers=DEFAULT_HEADERS):
 def _post(url, data, cookies=[], headers=DEFAULT_HEADERS):
     resp = _session.post(url, data=data, headers=headers, cookies=cookies,
                          timeout=REQUEST_TIMEOUT)
+    xbmc.log(f"POST request: {url} ({resp.status_code})")
+    return resp
+
+def _post_json(url, data, cookies=[], headers=DEFAULT_HEADERS, auth=None):
+    resp = _session.post(url, json=data, headers=headers, cookies=cookies,
+                         auth=auth, timeout=REQUEST_TIMEOUT)
     xbmc.log(f"POST request: {url} ({resp.status_code})")
     return resp
 
@@ -376,18 +391,239 @@ def _get_video_counts(cookies, video_id):
 
     return result.get("like_count"), result.get("dislike_count")
 
+def _get_video_auth():
+    """Return the credentials used for Bitchute's beta API, if configured.
+
+    The beta API authenticates with HTTP Basic auth (the same account
+    credentials as the site login), which exposes the per-user reaction
+    state that the old counts endpoint lacks.
+    """
+    user = addon.getSetting("user")
+    password = addon.getSetting("password")
+    if not user or not password:
+        return None
+    return (user, password)
+
+def _fetch_video_reaction(video_id):
+    """Fetch the logged-in user's reaction to a video.
+
+    Returns ``(is_liked, is_disliked)``; failures degrade to no reaction so
+    listings still render.
+    """
+    auth = _get_video_auth()
+    if not auth:
+        return False, False
+
+    url = "https://api.bitchute.com/api/beta/video"
+    headers = {'origin': "https://www.bitchute.com",
+               'referer': "https://www.bitchute.com/",
+               "User-Agent": USER_AGENT}
+    try:
+        response = _post_json(url, {'video_id': video_id}, headers=headers, auth=auth)
+    except requests.RequestException as e:
+        xbmc.log("Could not fetch reaction for {}: {}".format(video_id, e))
+        return False, False
+
+    if response.status_code != 200:
+        xbmc.log("Reaction request for {} returned {}".format(video_id, response.status_code))
+        return False, False
+
+    try:
+        result = response.json()
+    except ValueError:
+        xbmc.log("Reaction for {} returned an unparseable response".format(video_id))
+        return False, False
+
+    return bool(result.get("is_liked")), bool(result.get("is_disliked"))
+
+def _cached_video_vote(video_id):
+    """Return the cached vote for a video, or ``None`` when stale.
+
+    The tuple is ``(is_liked, is_disliked, up_delta, down_delta, base_up,
+    base_down)``. The deltas are the user's vote changes that Bitchute's
+    counts had not reflected yet when the vote was cast, relative to the
+    server counts in the base.
+
+    StorageServer is not thread-safe, so this is only called from the main
+    thread.
+    """
+    try:
+        cached = reaction_cache.get("reaction_" + video_id)
+    except Exception as e:
+        xbmc.log("Could not read cached vote for {}: {}".format(video_id, e))
+        return None
+
+    if not cached:
+        return None
+
+    parts = cached.split(",")
+    if len(parts) != 7:
+        return None
+
+    try:
+        timestamp = float(parts[6])
+    except ValueError:
+        return None
+
+    if time.time() - timestamp > REACTION_CACHE_TTL:
+        return None
+
+    try:
+        return (parts[0] == "1", parts[1] == "1", int(parts[2]), int(parts[3]),
+                int(parts[4]), int(parts[5]))
+    except ValueError:
+        return None
+
+def _store_video_vote(video_id, reaction, up_delta=0, down_delta=0, base=(0, 0)):
+    """Cache a vote, its optimistic count adjustment and the base counts."""
+    is_liked, is_disliked = reaction
+    try:
+        reaction_cache.set("reaction_" + video_id, "{},{},{},{},{},{},{}".format(
+            1 if is_liked else 0, 1 if is_disliked else 0, up_delta, down_delta,
+            base[0], base[1], time.time()))
+    except Exception as e:
+        xbmc.log("Could not cache vote for {}: {}".format(video_id, e))
+
+def apply_vote_adjustment(video_id, upvotes, downvotes, user_vote=0):
+    """Apply the locally recorded vote to a video's displayed counts.
+
+    Bitchute updates the public counts asynchronously, so while the server
+    still reports the counts seen when the vote was cast, the local
+    adjustment is added. Once the server counts move past that base, the
+    adjustment is dropped. Also returns the user's current vote so callers
+    can colorize the counts.
+    """
+    vote = _cached_video_vote(video_id)
+    if vote is None:
+        return upvotes, downvotes, user_vote
+
+    is_liked, is_disliked, up_delta, down_delta, base_up, base_down = vote
+    user_vote = 1 if is_liked else -1 if is_disliked else 0
+
+    if upvotes is not None and downvotes is not None and \
+       (upvotes, downvotes) == (base_up, base_down):
+        upvotes = max(0, upvotes + up_delta)
+        downvotes = max(0, downvotes + down_delta)
+
+    return upvotes, downvotes, user_vote
+
+def _get_video_vote(video_id):
+    """Return the logged-in user's vote on a video.
+
+    ``1`` for an upvote, ``-1`` for a downvote and ``0`` when the video has
+    no vote. Always reads the live reaction so vote actions stay correct.
+    """
+    is_liked, is_disliked = _fetch_video_reaction(video_id)
+    if is_liked:
+        return 1
+    if is_disliked:
+        return -1
+    return 0
+
+def _record_vote(video_id, current, reaction, base):
+    """Store a vote and the count adjustment Bitchute has not reflected yet.
+
+    ``current`` is the vote before the change (1, -1 or 0), ``reaction`` the
+    new one and ``base`` the server counts read just before voting.
+    """
+    base_up, base_down = base
+    if base_up is None or base_down is None:
+        # Without a server baseline there is no safe adjustment to make.
+        _store_video_vote(video_id, reaction)
+        return
+
+    up_delta = (1 if reaction[0] else 0) - (1 if current == 1 else 0)
+    down_delta = (1 if reaction[1] else 0) - (1 if current == -1 else 0)
+
+    cached = _cached_video_vote(video_id)
+    if cached is not None and (cached[4], cached[5]) == (base_up, base_down):
+        # The server still reports the previous base, so keep accumulating.
+        up_delta += cached[2]
+        down_delta += cached[3]
+
+    _store_video_vote(video_id, reaction, up_delta, down_delta, (base_up, base_down))
+
+def _vote_video(cookies, video_id, vote_type):
+    """Set or clear the user's vote on a video.
+
+    ``vote_type`` is ``like``, ``dislike`` or ``clear``. Bitchute's vote
+    endpoint toggles the submitted type, so the current vote is read first
+    and the request is skipped when it would toggle the wanted vote back off.
+    The vote and its count adjustment are recorded locally so descriptions
+    can show the result before the server counts catch up.
+    """
+    if vote_type not in ('like', 'dislike', 'clear'):
+        return {}
+
+    auth = _get_video_auth()
+    if not auth:
+        return {}
+
+    current = _get_video_vote(video_id)
+    reaction = (vote_type == 'like', vote_type == 'dislike')
+    base = _get_video_counts(cookies, video_id)
+
+    if not ((vote_type == 'like' and current == 1) or
+            (vote_type == 'dislike' and current == -1) or
+            (vote_type == 'clear' and current == 0)):
+        if vote_type == 'like':
+            post_type = 'like'
+        elif vote_type == 'dislike':
+            post_type = 'dislike'
+        else:
+            # Re-posting the current vote toggles it off.
+            post_type = 'like' if current == 1 else 'dislike'
+
+        url = "https://api.bitchute.com/api/beta/video/vote"
+        headers = {'origin': "https://www.bitchute.com",
+                   'referer': "https://www.bitchute.com/",
+                   "User-Agent": USER_AGENT}
+        try:
+            response = _post_json(url, {'video_id': video_id, 'vote': post_type},
+                                  headers=headers, auth=auth)
+        except requests.RequestException as e:
+            xbmc.log("Could not vote on {}: {}".format(video_id, e))
+            return {}
+
+        if response.status_code != 200:
+            xbmc.log("Vote on {} returned {}".format(video_id, response.status_code))
+            return {}
+
+    _record_vote(video_id, current, reaction, base)
+    return {"success": True}
+
 def _enrich_with_votes(cookies, entries):
-    """Add upvote/downvote counts to each entry, fetching them in parallel."""
+    """Add upvote/downvote counts and the user's own vote to each entry.
+
+    Counts and reaction state come from separate endpoints; entries are
+    processed concurrently. Reactions are cached, so only videos not seen
+    recently cost the extra request.
+    """
     if not entries:
         return entries
 
-    with ThreadPoolExecutor(max_workers=VOTE_FETCH_WORKERS) as pool:
-        counts = list(pool.map(
-            lambda entry: _get_video_counts(cookies, entry.video_id), entries))
+    cached = {entry.video_id: _cached_video_vote(entry.video_id)
+              for entry in entries}
 
-    for entry, (upvotes, downvotes) in zip(entries, counts):
+    def fetch_reaction(entry):
+        vote = cached[entry.video_id]
+        if vote is not None:
+            return vote[0], vote[1]
+        return _fetch_video_reaction(entry.video_id)
+
+    with ThreadPoolExecutor(max_workers=VOTE_FETCH_WORKERS) as pool:
+        count_futures = [pool.submit(_get_video_counts, cookies, entry.video_id)
+                         for entry in entries]
+        reaction_futures = [pool.submit(fetch_reaction, entry) for entry in entries]
+        counts = [future.result() for future in count_futures]
+        reactions = [future.result() for future in reaction_futures]
+
+    for entry, (upvotes, downvotes), reaction in zip(entries, counts, reactions):
         entry.upvotes = upvotes
         entry.downvotes = downvotes
+        entry.user_vote = 1 if reaction[0] else -1 if reaction[1] else 0
+        if cached[entry.video_id] is None:
+            _store_video_vote(entry.video_id, reaction)
 
     return entries
 
@@ -1129,6 +1365,12 @@ def toggle_subscription(channel_id):
 
     return result
 
+def vote_video(video_id, vote_type):
+    result = get_page(True, False, _vote_video, video_id, vote_type)
+    if not isinstance(result, dict):
+        result = {}
+    return result
+
 def get_notifications(page):
     return get_page(True, True, _get_notifications, page)
 
@@ -1183,9 +1425,12 @@ def edit_comment(video_id, id, parent_id, creator, fullname, content):
 def vote_comment(video_id, id, parent_id, creator, fullname, vote_type):
     return get_page(True, False, _vote_comment, video_id, id, parent_id, creator, fullname, vote_type)
 
-def clear_cache(login=True, data=True):
+def clear_cache(login=True, data=True, reactions=True):
     if login:
         login_cache.delete('%')
 
     if data:
         data_cache.delete('%')
+
+    if reactions:
+        reaction_cache.delete('%')
